@@ -1,0 +1,150 @@
+-- Chairs can be placed where people want them.
+-- sides: for long tables, how many chairs are on each side, as {"t": 1, "r": 5, "b": 0, "l": 5}
+-- (top, right, bottom, left). Round tables keep their chairs evenly spaced, so they don't need it.
+
+alter table wedding.seat_tables add column if not exists sides jsonb;
+alter table wedding.seat_tables drop constraint if exists seat_tables_sides_check;
+alter table wedding.seat_tables add constraint seat_tables_sides_check
+  check (sides is null or (jsonb_typeof(sides) = 'object' and pg_column_size(sides) < 400));
+
+create or replace function public.wedding_state(p_key text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  r jsonb;
+begin
+  perform wedding.check_key(p_key);
+  select jsonb_build_object(
+    'version', s.version,
+    'meta', s.meta,
+    'tables', coalesce((
+      select jsonb_agg(jsonb_build_object('id', t.id, 'num', t.num, 'seats', t.seats, 'kind', t.kind,
+                                          'end', t.end_side, 'link', t.link, 'x', t.x, 'y', t.y, 'sides', t.sides) order by t.num)
+      from wedding.seat_tables t), '[]'::jsonb),
+    'guests', coalesce((
+      select jsonb_agg(jsonb_build_object('id', g.id, 'name', g.name, 'table', g.tbl, 'order', g.ord) order by g.id)
+      from wedding.guests g), '[]'::jsonb),
+    'changes', coalesce((
+      select jsonb_agg(jsonb_build_object('id', c.id::text, 'at', c.at, 'by', c.by, 'dev', c.dev, 'text', c.text) order by c.id desc)
+      from (select * from wedding.changes order by id desc limit 300) c), '[]'::jsonb)
+  )
+  into r
+  from wedding.settings s
+  where s.id = 1;
+  return r;
+end
+$$;
+
+create or replace function public.wedding_apply(p_key text, p_ops jsonb)
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v bigint;
+  op jsonb;
+  opk text;
+  col text;
+  did text;
+  d jsonb;
+begin
+  perform wedding.check_key(p_key);
+  if p_ops is null or jsonb_typeof(p_ops) <> 'array' then
+    raise exception 'ops must be an array' using errcode = '22023';
+  end if;
+  if jsonb_array_length(p_ops) > 400 then
+    raise exception 'too many ops' using errcode = '22023';
+  end if;
+
+  -- one writer at a time, so batches never interleave
+  perform 1 from wedding.settings s where s.id = 1 for update;
+
+  for op in select e.value from jsonb_array_elements(p_ops) as e loop
+    opk := op->>'op';
+    col := op->>'c';
+    did := op->>'id';
+    d := coalesce(op->'d', '{}'::jsonb);
+
+    if col = 'guests' then
+      if opk = 'set' then
+        insert into wedding.guests as g (id, name, tbl, ord)
+        values (did, btrim(d->>'name'), coalesce((d->>'table')::int, 0), coalesce((d->>'order')::float8, 0))
+        on conflict (id) do update set name = excluded.name, tbl = excluded.tbl, ord = excluded.ord;
+      elsif opk = 'update' then
+        update wedding.guests g set
+          name = coalesce(btrim(d->>'name'), g.name),
+          tbl = coalesce((d->>'table')::int, g.tbl),
+          ord = coalesce((d->>'order')::float8, g.ord)
+        where g.id = did;
+      elsif opk = 'delete' then
+        delete from wedding.guests g where g.id = did;
+      else
+        raise exception 'bad op' using errcode = '22023';
+      end if;
+
+    elsif col = 'tables' then
+      if opk = 'set' then
+        insert into wedding.seat_tables as t (id, num, seats, kind, end_side, link, x, y, sides)
+        values (did, (d->>'num')::int, (d->>'seats')::int, coalesce(d->>'kind', 'round'), d->>'end',
+                (d->>'link')::int, (d->>'x')::float8, (d->>'y')::float8, nullif(d->'sides', 'null'::jsonb))
+        on conflict (id) do update set
+          num = excluded.num,
+          seats = excluded.seats,
+          kind = case when d ? 'kind' then excluded.kind else t.kind end,
+          end_side = case when d ? 'end' then excluded.end_side else t.end_side end,
+          link = case when d ? 'link' then excluded.link else t.link end,
+          x = case when d ? 'x' then excluded.x else t.x end,
+          y = case when d ? 'y' then excluded.y else t.y end,
+          sides = case when d ? 'sides' then excluded.sides else t.sides end;
+      elsif opk = 'update' then
+        update wedding.seat_tables t set
+          num = coalesce((d->>'num')::int, t.num),
+          seats = coalesce((d->>'seats')::int, t.seats),
+          kind = coalesce(d->>'kind', t.kind),
+          end_side = case when d ? 'end' then d->>'end' else t.end_side end,
+          link = case when d ? 'link' then (d->>'link')::int else t.link end,
+          x = case when d ? 'x' then (d->>'x')::float8 else t.x end,
+          y = case when d ? 'y' then (d->>'y')::float8 else t.y end,
+          sides = case when d ? 'sides' then nullif(d->'sides', 'null'::jsonb) else t.sides end
+        where t.id = did;
+      elsif opk = 'delete' then
+        delete from wedding.seat_tables t where t.id = did;
+      else
+        raise exception 'bad op' using errcode = '22023';
+      end if;
+
+    elsif col = 'changes' then
+      -- only new entries; the server trims old ones itself
+      if opk = 'set' and coalesce(btrim(d->>'text'), '') <> '' then
+        insert into wedding.changes (at, by, dev, text)
+        values (
+          (extract(epoch from clock_timestamp()) * 1000)::bigint,
+          nullif(left(btrim(coalesce(d->>'by', '')), 60), ''),
+          nullif(left(coalesce(d->>'dev', ''), 40), ''),
+          left(btrim(d->>'text'), 300)
+        );
+      end if;
+
+    else
+      raise exception 'bad collection' using errcode = '22023';
+    end if;
+  end loop;
+
+  delete from wedding.changes c
+  where c.id <= (select c2.id from wedding.changes c2 order by c2.id desc offset 250 limit 1);
+
+  update wedding.settings s set version = s.version + 1, updated_at = now()
+  where s.id = 1
+  returning s.version into v;
+  return v;
+end
+$$;
+
+revoke all on function public.wedding_state(text) from public;
+revoke all on function public.wedding_apply(text, jsonb) from public;
+grant execute on function public.wedding_state(text) to anon, authenticated;
+grant execute on function public.wedding_apply(text, jsonb) to anon, authenticated;

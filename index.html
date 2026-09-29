@@ -243,6 +243,32 @@ body.readonly .seat:hover .hl{fill:transparent}
 }
 @keyframes blink{50%{fill:var(--mark)}}
 
+.acts2{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.shapes{display:grid;gap:8px}
+.shape-opt{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:6px 12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);text-align:left}
+.shape-opt .t{display:grid;gap:1px}
+.shape-opt b{font-size:15px}
+.shape-opt .t span{font-size:13px;color:var(--ink-2)}
+.shape-opt[aria-pressed="true"]{border-color:var(--ui);box-shadow:inset 0 0 0 2px var(--ui);background:var(--ui-soft)}
+.si{fill:#fff;stroke:#585858;stroke-width:2.5}
+.si.c72{fill:var(--cyan)}
+.tbl.tmove .tshape{stroke:var(--ui);stroke-width:3.5;stroke-dasharray:8 5}
+.tbl.tmove .thit{fill:rgba(31,45,77,.07)}
+body.tmoving .tbl.tmove,body.tmoving .tseats.tmove{cursor:move}
+body.tmoving .seat{cursor:default}
+@media (max-width:640px){#btn-addtable{display:none}}
+.slot{cursor:pointer}
+.slot .shit2{fill:transparent}
+.slot .sc{fill:#fff;stroke:var(--open);stroke-width:2}
+.slot .sp{fill:none;stroke:var(--open);stroke-width:2.4;stroke-linecap:round}
+.slot:hover .sc{fill:var(--open-wash)}
+body.picking .slot .sc{fill:var(--open-wash);stroke-width:2.6}
+.seat.picked .chair{fill:var(--ui);stroke:var(--ui);stroke-dasharray:none}
+.seat.picked .hl{fill:var(--ui)}
+.seat.picked .n1,.seat.picked .n2,.seat.picked .no{fill:#fff}
+body.arranging #tblLayer .tbl:not(.arr),body.arranging #seatLayer .tseats:not(.arr){opacity:.4}
+body.arranging .seat{cursor:pointer}
+.zoom,.stats{bottom:calc(12px + var(--mb-h,0px))}
 .loading.gate{padding:24px;pointer-events:auto}
 .gate-card{display:grid;gap:8px;max-width:430px;padding:22px 24px;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:0 6px 22px rgba(20,25,35,.14);font-size:15px;line-height:1.45;color:var(--ink-2);text-align:center}
 .gate-card strong{font-size:18px;line-height:1.3;color:var(--ink)}
@@ -263,6 +289,7 @@ body.readonly .seat:hover .hl{fill:transparent}
     <div class="spacer"></div>
     <button class="tb" id="btn-undo" type="button" disabled title="Nothing to undo yet"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Undo</span></button>
     <button class="tb" id="btn-add" type="button" aria-label="Add a guest"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="9.5" cy="8" r="3.8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20c.4-3.6 3.1-5.8 6.5-5.8s6.1 2.2 6.5 5.8M19 7.5v6M16 10.5h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="lbl">Add guest</span></button>
+    <button class="tb" id="btn-addtable" type="button" aria-label="Add a table"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="10" cy="13" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 4.5v1.6M10 19.9v1.6M1.5 13h1.6M16.9 13h1.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19.5 2.5v5M17 5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="lbl">Add table</span></button>
     <button class="tb" id="btn-changes" type="button" aria-label="Recent changes"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lbl">Changes</span></button>
   </header>
 
@@ -280,7 +307,7 @@ body.readonly .seat:hover .hl{fill:transparent}
       <ul>
         <li>Drag to move around. Pinch, scroll, or use + and &minus; to zoom.</li>
         <li class="edit">Tap a name, then tap the table where they should sit.</li>
-        <li class="edit">Tap a table to add or remove seats. Tap a green open seat to add someone.</li>
+        <li class="edit">Tap a table to add or remove seats, move it or change its shape. Tap a green open seat to add someone.</li>
         <li class="edit">Made a mistake? Press Undo at the top.</li>
       </ul>
       <div class="row"><button type="button" class="btn small" id="hint-hide">Got it</button></div>
@@ -321,6 +348,32 @@ body.readonly .seat:hover .hl{fill:transparent}
       <button type="button" class="btn" id="mb-takeoff">Take off table</button>
       <button type="button" class="btn quiet-danger" id="mb-delete" hidden>Remove from guest list</button>
       <button type="button" class="btn" id="mb-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="movebar" id="tmbar" hidden>
+  <div class="mb-inner">
+    <div>
+      <p class="mb-title"><strong id="tm-title"></strong></p>
+      <p class="mb-hint" id="tm-hint"></p>
+    </div>
+    <div class="mb-actions">
+      <button type="button" class="btn" id="tm-cancel">Cancel</button>
+      <button type="button" class="btn primary" id="tm-done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="movebar" id="arbar" hidden>
+  <div class="mb-inner">
+    <div>
+      <p class="mb-title"><strong id="ar-title"></strong></p>
+      <p class="mb-hint" id="ar-hint"></p>
+    </div>
+    <div class="mb-actions">
+      <button type="button" class="btn quiet-danger" id="ar-remove" hidden>Remove this seat</button>
+      <button type="button" class="btn primary" id="ar-done">Done</button>
     </div>
   </div>
 </div>
@@ -377,7 +430,35 @@ body.readonly .seat:hover .hl{fill:transparent}
   <div class="dlg">
     <h2 id="cf-title"></h2>
     <p id="cf-body"></p>
-    <div class="actions"><button type="button" class="btn" data-close>Keep them</button><button type="button" class="btn danger" id="cf-ok">Remove</button></div>
+    <div class="actions"><button type="button" class="btn" data-close id="cf-keep">Keep them</button><button type="button" class="btn danger" id="cf-ok">Remove</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-shape" aria-labelledby="shape-title">
+  <div class="dlg">
+    <h2 id="shape-title">Change the shape</h2>
+    <p>The guests stay at this table and get chairs around the new shape.</p>
+    <div class="shapes" id="shape-list"></div>
+    <div class="actions"><button type="button" class="btn" data-close>Cancel</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-addtable" aria-labelledby="at-title">
+  <form class="dlg" id="at-form" novalidate>
+    <h2 id="at-title">Add a table</h2>
+    <p>Pick the shape and the number of seats. Next you drag it into place.</p>
+    <div class="shapes" id="at-shapes"></div>
+    <div class="field"><label for="at-seats">Seats</label><select id="at-seats"></select></div>
+    <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary">Place the table</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-addwhat" aria-labelledby="aw-title">
+  <div class="dlg">
+    <h2 id="aw-title">What do you want to add?</h2>
+    <button type="button" class="btn primary wide" id="aw-guest">A guest</button>
+    <button type="button" class="btn wide" id="aw-table">A table</button>
+    <div class="actions"><button type="button" class="btn" data-close>Cancel</button></div>
   </div>
 </dialog>
 
@@ -411,6 +492,24 @@ body.readonly .seat:hover .hl{fill:transparent}
   spec(7, 'round72', 546.7, 339.8); spec(5, 'round72', 549.5, 446.5);
   spec(29, 'sweet', 651.5, 259.9);
   var KIND_NAME = { long: 'Long table', longh: 'Long table', round: '60 inch round', round72: '72 inch round', sweet: 'Sweetheart table' };
+  var KIND_PICK = [
+    { kind: 'round', label: '60 inch round', note: 'Usually 8 to 10 seats' },
+    { kind: 'round72', label: '72 inch round', note: 'Usually 10 to 12 seats' },
+    { kind: 'long', label: '8 foot long, up and down', note: 'Usually 8 to 10 seats' },
+    { kind: 'longh', label: '8 foot long, sideways', note: 'Usually 8 to 10 seats' },
+    { kind: 'sweet', label: 'Sweetheart table', note: 'For two' }
+  ];
+  var KIND_SEATS = { round: 8, round72: 10, long: 8, longh: 8, sweet: 2 };
+  function kindPhrase(k) { return { round: 'a 60 inch round', round72: 'a 72 inch round', long: 'a long table', longh: 'a long table turned sideways', sweet: 'a sweetheart table' }[k] || 'a table'; }
+  function shapeIcon(kind) {
+    var s = '<svg viewBox="0 0 40 40" width="38" height="38" aria-hidden="true" focusable="false">';
+    if (kind === 'round') s += '<circle cx="20" cy="20" r="11" class="si"/>';
+    else if (kind === 'round72') s += '<circle cx="20" cy="20" r="14.5" class="si c72"/>';
+    else if (kind === 'long') s += '<rect x="14" y="4" width="12" height="32" class="si"/>';
+    else if (kind === 'longh') s += '<rect x="4" y="14" width="32" height="12" class="si"/>';
+    else s += '<path d="M7 15H33A13 13 0 0 1 7 15Z" class="si"/>';
+    return s + '</svg>';
+  }
   var PLAN_SEATS = { 1: 11, 2: 10, 3: 9, 4: 8, 5: 10, 6: 8, 7: 10, 8: 9, 9: 8, 10: 8, 11: 8, 12: 9, 13: 9, 14: 8, 15: 8, 16: 8, 17: 8, 18: 8, 19: 7, 20: 8, 21: 8, 22: 8, 23: 9, 24: 8, 25: 8, 26: 8, 27: 8, 28: 8, 29: 2 };
   var COLS = [
     { id: 'A', x: 506.5, units: [[1, 2, 3]] },
@@ -434,8 +533,9 @@ body.readonly .seat:hover .hl{fill:transparent}
   function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
   function tid(n) { return 't' + (n < 10 ? '0' : '') + n; }
   function cleanName(s) { return String(s || '').replace(/\s+/g, ' ').trim().slice(0, 80); }
-  function placeName(n) { return n === 0 ? 'Not seated yet' : n === 29 ? 'the sweetheart table' : 'Table ' + n; }
-  function PlaceName(n) { return n === 0 ? 'Not seated yet' : n === 29 ? 'The sweetheart table' : 'Table ' + n; }
+  function placeName(n) { return n === 0 ? 'Not seated yet' : isSweet(n) ? 'the sweetheart table' : 'Table ' + n; }
+  function PlaceName(n) { return n === 0 ? 'Not seated yet' : isSweet(n) ? 'The sweetheart table' : 'Table ' + n; }
+  function r1(v) { return Math.round(v * 10) / 10; }
   function inPlace(n) { return n ? 'at ' + placeName(n) : 'in Not seated yet'; }
   function f1(v) { return (Math.round(v * 10) / 10).toString(); }
   var motionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -452,7 +552,24 @@ body.readonly .seat:hover .hl{fill:transparent}
     undo: [], pruning: false, fullCtx: null, renameId: null, confirmId: null, addDup: false,
     lay: null, fitted: false, userView: false
   };
-  function seatsOf(n) { var t = S.tables.get(n); return t ? t.seats : (S.loadedT && S.tables.size ? 0 : PLAN_SEATS[n]); }
+  function seatsOf(n) {
+    if (S.tmove && S.tmove.isNew && S.tmove.n === n) return S.tmove.seats;
+    var t = S.tables.get(n);
+    return t ? t.seats : (S.loadedT && S.tables.size ? 0 : PLAN_SEATS[n] || 0);
+  }
+  /* The tables on the chart, in number order */
+  function tableNums() {
+    if (!S.loadedT || !S.tables.size) return TABLES.slice();
+    return Array.from(S.tables.keys()).sort(function (a, b) { return a - b; });
+  }
+  function tinfo(n) { return S.tables.get(n) || null; }
+  function kindOf(n) {
+    if (S.tmove && S.tmove.isNew && S.tmove.n === n) return S.tmove.kind;
+    var t = tinfo(n);
+    return (t && t.kind) || (T[n] ? T[n].kind : 'round');
+  }
+  function isSweet(n) { return kindOf(n) === 'sweet'; }
+  function nextTableNum() { var m = 0; S.tables.forEach(function (t, n) { m = Math.max(m, n); }); return m + 1; }
   function at(n) { return S.by.get(n) || []; }
   function canEdit() { return !!S.db && S.canWrite !== false && !S.failed; }
   function isHit(name) { return S.qn.length >= 2 && norm(name).indexOf(S.qn) !== -1; }
@@ -460,7 +577,7 @@ body.readonly .seat:hover .hl{fill:transparent}
   function derive() {
     var by = new Map();
     by.set(0, []);
-    TABLES.forEach(function (n) { by.set(n, []); });
+    tableNums().forEach(function (n) { by.set(n, []); });
     S.guests.forEach(function (g) { (by.get(g.table) || by.get(0)).push(g); });
     by.forEach(function (list) { list.sort(function (a, b) { return (a.order - b.order) || a.name.localeCompare(b.name); }); });
     S.by = by;
@@ -566,49 +683,66 @@ body.readonly .seat:hover .hl{fill:transparent}
     });
     return best || { Rt: 170, th0: 0 };
   }
+  /* Chairs on a long table, clockwise: top, right, bottom, left. On a table running up and down the top and
+     bottom are its ends; on a sideways table the left and right are. Each end takes at most one chair. */
+  function defaultSides(kind, end, cap) {
+    var vert = kind === 'long';
+    var okEnd = vert ? (end === 'top' || end === 'bottom') : (end === 'left' || end === 'right');
+    var e = okEnd && cap % 2 === 1 ? 1 : 0, rest = cap - e, a = Math.ceil(rest / 2), b = Math.floor(rest / 2);
+    return vert ? { t: e && end === 'top' ? 1 : 0, r: a, b: e && end === 'bottom' ? 1 : 0, l: b }
+                : { t: a, r: e && end === 'right' ? 1 : 0, b: b, l: e && end === 'left' ? 1 : 0 };
+  }
+  function validSides(kind, sd, cap) {
+    if (!sd || typeof sd !== 'object') return false;
+    var sum = 0, ks = ['t', 'r', 'b', 'l'];
+    for (var i = 0; i < 4; i++) { var v = sd[ks[i]]; if (!Number.isInteger(v) || v < 0 || v > 30) return false; sum += v; }
+    if (sum !== cap) return false;
+    return kind === 'long' ? sd.t <= 1 && sd.b <= 1 : sd.l <= 1 && sd.r <= 1;
+  }
   function longPlace(t, seats) {
-    var S2 = seats.length, horiz = t.kind === 'longh';
-    var end = t.end && S2 % 2 === 1 ? 1 : 0;
-    var rest = S2 - end, a = Math.ceil(rest / 2), b = Math.floor(rest / 2);
+    var horiz = t.kind === 'longh', vert = !horiz;
+    var reg = seats.filter(function (s) { return s.state !== 'over'; }), ext = seats.filter(function (s) { return s.state === 'over'; });
+    var cnt, extra = { t: 0, r: 0, b: 0, l: 0 }, list, extraList = [];
+    if (validSides(t.kind, t.sides, reg.length)) {
+      cnt = { t: t.sides.t, r: t.sides.r, b: t.sides.b, l: t.sides.l };
+      list = reg;
+      var A = vert ? 'r' : 't', B = vert ? 'l' : 'b';
+      ext.forEach(function () { var sd = cnt[A] + extra[A] <= cnt[B] + extra[B] ? A : B; extra[sd]++; });
+      extraList = ext;
+    } else {
+      /* never arranged by hand: the names beyond the chairs just continue around the table */
+      cnt = defaultSides(t.kind, t.end, seats.length);
+      list = seats;
+    }
+    var nA = vert ? cnt.r + extra.r : cnt.t + extra.t, nB = vert ? cnt.l + extra.l : cnt.b + extra.b;
     var pitch = K.PITCH;
     if (horiz) {
       var mw = 0;
       seats.forEach(function (s) { mw = Math.max(mw, s.lab.w); });
       pitch = Math.max(K.PITCH, mw + 12);
     }
-    var len = Math.max(a, b, 1) * pitch + 8, half = len / 2, off = K.LTW / 2 + K.CG + K.CD / 2;
-    var order = [];
-    var idx = 0;
-    function take() { return seats[idx++]; }
-    if (!horiz) {
-      if (end && t.end === 'top') order.push(['top', 0]);
-      for (var i = 0; i < a; i++) order.push(['right', i]);
-      if (end && t.end === 'bottom') order.push(['bottom', 0]);
-      for (var j = b - 1; j >= 0; j--) order.push(['left', j]);
-    } else {
-      for (var i2 = 0; i2 < a; i2++) order.push(['top', i2]);
-      if (end && t.end === 'right') order.push(['right', 0]);
-      for (var j2 = b - 1; j2 >= 0; j2--) order.push(['bottom', j2]);
-      if (end && t.end === 'left') order.push(['left', 0]);
-    }
-    var shiftA = (Math.max(a, b) - a) * pitch / 2, shiftB = (Math.max(a, b) - b) * pitch / 2;
-    order.forEach(function (o) {
-      var s = take();
+    var len = Math.max(nA, nB, 1) * pitch + 8, half = len / 2, off = K.LTW / 2 + K.CG + K.CD / 2;
+    var shiftA = (Math.max(nA, nB) - nA) * pitch / 2, shiftB = (Math.max(nA, nB) - nB) * pitch / 2;
+    function put(s, side, c) {
       if (!s) return;
-      var side = o[0], i3 = o[1];
-      if (!horiz) {
-        if (side === 'right') { s.cx = off; s.cy = -half + 4 + shiftA + pitch * (i3 + 0.5); s.rot = 90; s.align = 'start'; s.lx = s.cx + K.CD / 2 + K.LG; s.top = s.cy - s.lab.h / 2; }
-        else if (side === 'left') { s.cx = -off; s.cy = -half + 4 + shiftB + pitch * (i3 + 0.5); s.rot = -90; s.align = 'end'; s.lx = s.cx - K.CD / 2 - K.LG; s.top = s.cy - s.lab.h / 2; }
-        else if (side === 'top') { s.cx = 0; s.cy = -half - K.CG - K.CD / 2; s.rot = 0; s.align = 'middle'; s.lx = 0; s.top = s.cy - K.CD / 2 - 4 - s.lab.h; }
+      s.side = side; s.si = c;
+      if (vert) {
+        if (side === 'r') { s.cx = off; s.cy = -half + 4 + shiftA + pitch * (c + 0.5); s.rot = 90; s.align = 'start'; s.lx = s.cx + K.CD / 2 + K.LG; s.top = s.cy - s.lab.h / 2; }
+        else if (side === 'l') { var j = nB - 1 - c; s.cx = -off; s.cy = -half + 4 + shiftB + pitch * (j + 0.5); s.rot = -90; s.align = 'end'; s.lx = s.cx - K.CD / 2 - K.LG; s.top = s.cy - s.lab.h / 2; }
+        else if (side === 't') { s.cx = 0; s.cy = -half - K.CG - K.CD / 2; s.rot = 0; s.align = 'middle'; s.lx = 0; s.top = s.cy - K.CD / 2 - 4 - s.lab.h; }
         else { s.cx = 0; s.cy = half + K.CG + K.CD / 2; s.rot = 180; s.align = 'middle'; s.lx = 0; s.top = s.cy + K.CD / 2 + 4; }
       } else {
-        if (side === 'top') { s.cy = -off; s.cx = -half + 4 + shiftA + pitch * (i3 + 0.5); s.rot = 0; s.align = 'middle'; s.lx = s.cx; s.top = s.cy - K.CD / 2 - 4 - s.lab.h; }
-        else if (side === 'bottom') { s.cy = off; s.cx = -half + 4 + shiftB + pitch * (i3 + 0.5); s.rot = 180; s.align = 'middle'; s.lx = s.cx; s.top = s.cy + K.CD / 2 + 4; }
-        else if (side === 'left') { s.cy = 0; s.cx = -half - K.CG - K.CD / 2; s.rot = -90; s.align = 'end'; s.lx = s.cx - K.CD / 2 - K.LG; s.top = -s.lab.h / 2; }
+        if (side === 't') { s.cy = -off; s.cx = -half + 4 + shiftA + pitch * (c + 0.5); s.rot = 0; s.align = 'middle'; s.lx = s.cx; s.top = s.cy - K.CD / 2 - 4 - s.lab.h; }
+        else if (side === 'b') { var j2 = nB - 1 - c; s.cy = off; s.cx = -half + 4 + shiftB + pitch * (j2 + 0.5); s.rot = 180; s.align = 'middle'; s.lx = s.cx; s.top = s.cy + K.CD / 2 + 4; }
+        else if (side === 'l') { s.cy = 0; s.cx = -half - K.CG - K.CD / 2; s.rot = -90; s.align = 'end'; s.lx = s.cx - K.CD / 2 - K.LG; s.top = -s.lab.h / 2; }
         else { s.cy = 0; s.cx = half + K.CG + K.CD / 2; s.rot = 90; s.align = 'start'; s.lx = s.cx + K.CD / 2 + K.LG; s.top = -s.lab.h / 2; }
       }
-    });
-    return { len: len, horiz: horiz };
+    }
+    var i = 0;
+    ['t', 'r', 'b', 'l'].forEach(function (side) { for (var c = 0; c < cnt[side]; c++) put(list[i++], side, c); });
+    var e = 0;
+    ['t', 'r', 'b', 'l'].forEach(function (side) { for (var c = 0; c < extra[side]; c++) put(extraList[e++], side, cnt[side] + c); });
+    return { len: len, horiz: horiz, pitch: pitch };
   }
   function sweetPlace(seats) {
     var n = seats.length, gap = 24, w = Math.max(40, n * gap + 8);
@@ -635,20 +769,20 @@ body.readonly .seat:hover .hl{fill:transparent}
     return out;
   }
 
-  /* ================= Layout: spread the plan just enough for names ================= */
-  function layout() {
-    var tabs = {};
-    TABLES.forEach(function (n) { tabs[n] = { n: n, t: T[n], seats: seatContents(n) }; });
-    var rounds = [], r72 = [];
-    TABLES.forEach(function (n) {
+  /* ================= Layout ================= */
+  /* Chairs and name labels for each table, worked out around the table's center.
+     Round tables of the same size share one radius, like the real ones. */
+  function buildTabs(nums, specOf) {
+    var tabs = {}, rounds = [], r72 = [];
+    nums.forEach(function (n) { tabs[n] = { n: n, t: specOf(n), seats: seatContents(n) }; });
+    nums.forEach(function (n) {
       var tb = tabs[n];
-      if (tb.t.kind === 'round' || tb.t.kind === 'round72') { var need = roundNeed(tb.seats); tb.need = need; (tb.t.kind === 'round' ? rounds : r72).push(tb); }
+      if (tb.t.kind === 'round' || tb.t.kind === 'round72') { tb.need = roundNeed(tb.seats); (tb.t.kind === 'round' ? rounds : r72).push(tb); }
     });
     var R60 = 0, R72 = 0;
     rounds.forEach(function (tb) { R60 = Math.max(R60, tb.need.Rt); });
     r72.forEach(function (tb) { R72 = Math.max(R72, tb.need.Rt); });
     R72 = Math.max(R72, Math.round(R60 * 1.12));
-    /* Each round table can turn its chairs half a step; keep both options and pick the one that fits the plan best */
     rounds.concat(r72).forEach(function (tb) {
       var R = tb.t.kind === 'round' ? R60 : R72, n = Math.max(1, tb.seats.length);
       tb.R = R;
@@ -659,14 +793,21 @@ body.readonly .seat:hover .hl{fill:transparent}
         if (roundClear(tb.seats)) tb.variants.push({ th0: th0, bb: bboxOf(tb) });
       });
       if (!tb.variants.length) { roundPlace(tb.seats, R, tb.need.th0); tb.variants.push({ th0: tb.need.th0, bb: bboxOf(tb) }); }
-      tb.pick = 0;
+      /* each round table takes whichever chair turn keeps it shortest */
+      var bestI = 0, bestH = Infinity, bestW = Infinity;
+      tb.variants.forEach(function (v, i) {
+        var h = v.bb.y1 - v.bb.y0, w = v.bb.x1 - v.bb.x0;
+        if (h < bestH - 0.5 || (Math.abs(h - bestH) <= 0.5 && w < bestW)) { bestH = h; bestW = w; bestI = i; }
+      });
+      tb.pick = bestI;
+      roundPlace(tb.seats, R, tb.variants[bestI].th0);
+      tb.bb = tb.variants[bestI].bb;
     });
-    function usePick(tb) { roundPlace(tb.seats, tb.R, tb.variants[tb.pick].th0); tb.bb = tb.variants[tb.pick].bb; }
-    TABLES.forEach(function (n) {
+    nums.forEach(function (n) {
       var tb = tabs[n];
       if (tb.t.kind === 'long' || tb.t.kind === 'longh') {
         var g = longPlace(tb.t, tb.seats);
-        tb.len = g.len; tb.horiz = g.horiz;
+        tb.len = g.len; tb.horiz = g.horiz; tb.pitch = g.pitch;
         tb.shapeBox = g.horiz ? { x0: -g.len / 2, x1: g.len / 2, y0: -K.LTW / 2, y1: K.LTW / 2 } : { x0: -K.LTW / 2, x1: K.LTW / 2, y0: -g.len / 2, y1: g.len / 2 };
         tb.bb = bboxOf(tb);
       } else if (tb.t.kind === 'sweet') {
@@ -674,18 +815,42 @@ body.readonly .seat:hover .hl{fill:transparent}
         tb.sw = sw.w;
         tb.shapeBox = { x0: -sw.w / 2, x1: sw.w / 2, y0: 0, y1: sw.w / 2 };
         tb.bb = bboxOf(tb);
-      } else usePick(tb);
+      }
     });
-    /* Each round table takes whichever chair turn keeps it shortest, so the room stays compact */
-    rounds.concat(r72).forEach(function (tb) {
-      var bestI = 0, bestH = Infinity, bestW = Infinity;
-      tb.variants.forEach(function (v, i) {
-        var h = v.bb.y1 - v.bb.y0, w = v.bb.x1 - v.bb.x0;
-        if (h < bestH - 0.5 || (Math.abs(h - bestH) <= 0.5 && w < bestW)) { bestH = h; bestW = w; bestI = i; }
-      });
-      tb.pick = bestI; usePick(tb);
-    });
-    /* Units: tables pushed together end to end, like the plan */
+    return tabs;
+  }
+
+  /* Plan units to drawing units. The hall is stretched to fit names; the lobby, patio and back rooms keep a steady scale. */
+  function interpBP(bp, v) {
+    for (var i = 1; i < bp.length; i++) if (v <= bp[i][0]) { var a = bp[i - 1], b = bp[i]; return a[1] + (v - a[0]) / (b[0] - a[0]) * (b[1] - a[1]); }
+    var a2 = bp[bp.length - 2], b2 = bp[bp.length - 1];
+    return b2[1] + (v - b2[0]) * (b2[1] - a2[1]) / (b2[0] - a2[0]);
+  }
+  function roomMaps(P) {
+    function Yh(y) { return (y - PL.top) * P.sy; }
+    function Yl(y) { return P.yDoor + (y - PL.door) * P.syl; }
+    return {
+      X: function (x) {
+        if (x < 401) return P.X401 - (401 - x) * kL;
+        if (x < PL.dj) return P.X401 + (x - 401) / (PL.dj - 401) * (0 - P.X401);
+        if (x <= PL.right) return interpBP(P.XB, x);
+        return P.hallR + (x - PL.right) * kR;
+      },
+      Y: function (y) {
+        if (y < PL.drapeOut) return P.yDrapeOut - (PL.drapeOut - y) * kT;
+        if (y < PL.top) return P.yDrapeOut + (y - PL.drapeOut) / (PL.top - PL.drapeOut) * (0 - P.yDrapeOut);
+        if (y <= PL.door) return Yh(y);
+        if (y <= PL.rope) return Yl(y);
+        return P.yRope + (y - PL.rope) * kP;
+      }
+    };
+  }
+
+  /* The original arrangement from the Prismm plan: columns packed just wide enough for the names.
+     Used once to set up the room; after that every table keeps its own spot. */
+  function autoLayout() {
+    var nums = TABLES.slice();
+    var tabs = buildTabs(nums, function (n) { return T[n]; });
     var units = [];
     COLS.forEach(function (col) {
       col.U = col.units.map(function (members) {
@@ -705,8 +870,6 @@ body.readonly .seat:hover .hl{fill:transparent}
       col.L = 0; col.R = 0;
       col.U.forEach(function (u) { col.L = Math.max(col.L, -u.bb.x0); col.R = Math.max(col.R, u.bb.x1); });
     });
-
-    /* Vertical: one scale for the whole hall, just enough for the busiest column; tables then settle as close to their plan spots as they can */
     var span = PL.door - PL.top, sy = 3;
     COLS.forEach(function (col) {
       var need = 2 * MARGV + GAPV * (col.U.length - 1);
@@ -731,7 +894,6 @@ body.readonly .seat:hover .hl{fill:transparent}
         if (!moved) break;
       }
     });
-    /* Horizontal: columns packed left to right in the plan's order */
     var colX = {}, x = 18;
     var floorH = (PL.fy1 - PL.fy0) * sy, floorW = Math.max(210, Math.min(330, floorH * 15 / 24));
     COLS.forEach(function (col, i) {
@@ -741,22 +903,13 @@ body.readonly .seat:hover .hl{fill:transparent}
     });
     var hallR = x - GAPX + 20;
     var XB = [[PL.dj, 0], [506.5, colX.A], [546.7, colX.B], [583.6, colX.C], [PL.fx0, colX.fx0], [PL.fx1, colX.fx1], [707.5, colX.D], [743.2, colX.E], [785.2, colX.F], [PL.right, hallR]];
-    function interp(bp, v) {
-      for (var i = 1; i < bp.length; i++) if (v <= bp[i][0]) { var a = bp[i - 1], b = bp[i]; return a[1] + (v - a[0]) / (b[0] - a[0]) * (b[1] - a[1]); }
-      var a2 = bp[bp.length - 2], b2 = bp[bp.length - 1];
-      return b2[1] + (v - b2[0]) * (b2[1] - a2[1]) / (b2[0] - a2[0]);
-    }
-
-    /* Place hall tables */
     var place = {};
     COLS.forEach(function (col) {
       col.U.forEach(function (u) {
         u.members.forEach(function (n) { place[n] = { x: colX[col.id], y: u.y + tabs[n].oy }; });
       });
     });
-    place[29] = { x: interp(XB, T[29].cx), y: Yh(T[29].cy) };
-
-    /* Lower row by the hangar doors: same order as the plan, nudged apart when names would touch */
+    place[29] = { x: interpBP(XB, T[29].cx), y: Yh(T[29].cy) };
     var yDoor = Yh(PL.door);
     var tallest = 0;
     LOWER_LEFT.concat(LOWER_RIGHT).forEach(function (n) { tallest = Math.max(tallest, tabs[n].bb.y1 - tabs[n].bb.y0); });
@@ -767,7 +920,7 @@ body.readonly .seat:hover .hl{fill:transparent}
       var tb = tabs[n], y = Yl(T[n].cy);
       y = Math.max(y, yDoor + MARGV - tb.bb.y0);
       y = Math.min(y, yRope0 - MARGV - tb.bb.y1);
-      place[n] = { x: interp(XB, T[n].cx), y: y };
+      place[n] = { x: interpBP(XB, T[n].cx), y: y };
     });
     function collide(a, b) {
       var ra = occRects(tabs[a], place[a].x, place[a].y), rb = occRects(tabs[b], place[b].x, place[b].y);
@@ -793,25 +946,165 @@ body.readonly .seat:hover .hl{fill:transparent}
     LOWER_LEFT.concat(LOWER_RIGHT).forEach(function (n) { leftMost = Math.min(leftMost, place[n].x + tabs[n].bb.x0); rightMost = Math.max(rightMost, place[n].x + tabs[n].bb.x1); });
     if (rightMost + 20 > hallR) { hallR = rightMost + 20; XB[XB.length - 1][1] = hallR; }
     var yRope = Yl(PL.rope);
-
-    /* Full-venue maps: the hall is stretched to fit names; the lobby, patio and back rooms keep a steady scale */
     var X401 = -(PL.dj - 401) * kDJ;
     if (leftMost - 16 < 0) { var push = 0 - (leftMost - 16); X401 -= push; }
-    function X(x) {
-      if (x < 401) return X401 - (401 - x) * kL;
-      if (x < PL.dj) return X401 + (x - 401) / (PL.dj - 401) * (0 - X401);
-      if (x <= PL.right) return interp(XB, x);
-      return hallR + (x - PL.right) * kR;
+    var P = { XB: XB, X401: X401, hallR: hallR, sy: sy, syl: syl, yDoor: yDoor, yRope: yRope, yDrapeOut: -(PL.top - PL.drapeOut) * kD, colX: colX, floorW: floorW };
+    var R = roomMaps(P);
+    return { tabs: tabs, place: place, X: R.X, Y: R.Y, P: P, sy: sy, syl: syl, colX: colX, hallR: hallR, yDoor: yDoor, yRope: yRope, floorW: floorW, nums: nums, links: {}, free: false };
+  }
+
+  /* ----- Tables that people can move ----- */
+  function tableSpec(n) {
+    if (S.tmove && S.tmove.isNew && S.tmove.n === n) return { n: n, kind: S.tmove.kind, end: null };
+    var t = tinfo(n), sp = T[n], kind = kindOf(n);
+    var end = t ? t.end : (sp && sp.kind === kind ? sp.end : null);
+    return { n: n, kind: kind, end: end || null, sides: t && t.sides ? t.sides : null };
+  }
+  /* Which table each long table is pushed up against, with the table being moved lifted out of its row */
+  function effLinks(nums, opt) {
+    var L = {}, tm = S.tmove;
+    nums.forEach(function (n) { var t = tinfo(n); L[n] = t && t.link != null ? t.link : null; });
+    if (tm) {
+      var n = tm.n, up = L[n] != null ? L[n] : null;
+      nums.forEach(function (m) { if (m !== n && L[m] === n) L[m] = up; });
+      L[n] = null;
+      var at2 = opt && opt.noAttach ? null : tm.attach;
+      if (at2 && at2.type === 'after') {
+        nums.forEach(function (m) { if (m !== n && L[m] === at2.target) L[m] = n; });
+        L[n] = at2.target;
+      } else if (at2 && at2.type === 'before') L[at2.target] = n;
     }
-    var yDrapeOut = -(PL.top - PL.drapeOut) * kD;
-    function Y(y) {
-      if (y < PL.drapeOut) return yDrapeOut - (PL.drapeOut - y) * kT;
-      if (y < PL.top) return yDrapeOut + (y - PL.drapeOut) / (PL.top - PL.drapeOut) * (0 - yDrapeOut);
-      if (y <= PL.door) return Yh(y);
-      if (y <= PL.rope) return Yl(y);
-      return yRope + (y - PL.rope) * kP;
+    return L;
+  }
+  function sameRow(a, b) { return !!a && !!b && a.t.kind === b.t.kind && (a.t.kind === 'long' || a.t.kind === 'longh'); }
+  /* Rows of long tables sit end to end, starting from the first table in the row */
+  function stackUp(nums, tabs, L, pos) {
+    var place = {}, bodies = [], kids = {}, seen = {};
+    nums.forEach(function (m) {
+      var p = L[m];
+      if (p != null && tabs[p] && sameRow(tabs[p], tabs[m])) (kids[p] = kids[p] || []).push(m); else L[m] = null;
+    });
+    Object.keys(kids).forEach(function (k) { kids[k].sort(function (a, b) { return a - b; }); });
+    nums.forEach(function (root) {
+      if (L[root] != null || seen[root]) return;
+      var p0 = pos(root), body = { members: [root] };
+      place[root] = { x: p0.x, y: p0.y };
+      seen[root] = true;
+      var cur = root;
+      while (kids[cur] && kids[cur].length) {
+        var nx = kids[cur][0];
+        if (seen[nx]) break;
+        var a = tabs[cur], b = tabs[nx], pa = place[cur];
+        place[nx] = a.t.kind === 'long' ? { x: pa.x, y: pa.y + a.len / 2 + b.len / 2 } : { x: pa.x + a.len / 2 + b.len / 2, y: pa.y };
+        seen[nx] = true;
+        body.members.push(nx);
+        cur = nx;
+      }
+      bodies.push(body);
+    });
+    nums.forEach(function (m) { if (!seen[m]) { var p = pos(m); place[m] = { x: p.x, y: p.y }; L[m] = null; bodies.push({ members: [m] }); seen[m] = true; } });
+    return { place: place, bodies: bodies };
+  }
+  function bodyRects(tabs, place, members) {
+    var out = [];
+    members.forEach(function (n) {
+      var tb = tabs[n], p = place[n], sb = tb.shapeBox;
+      out.push({ x0: p.x + sb.x0, x1: p.x + sb.x1, y0: p.y + sb.y0, y1: p.y + sb.y1 });
+      tb.seats.forEach(function (s) {
+        var r = rectOfLabel(s), c = chairRect(s);
+        out.push({ x0: p.x + r.x0, x1: p.x + r.x1, y0: p.y + r.y0, y1: p.y + r.y1 });
+        out.push({ x0: p.x + c.x0, x1: p.x + c.x1, y0: p.y + c.y0, y1: p.y + c.y1 });
+      });
+    });
+    return out;
+  }
+  function unionBox(rs) {
+    var b = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    rs.forEach(function (r) { b.x0 = Math.min(b.x0, r.x0); b.y0 = Math.min(b.y0, r.y0); b.x1 = Math.max(b.x1, r.x1); b.y1 = Math.max(b.y1, r.y1); });
+    return b;
+  }
+  /* The smallest straight move of B that clears A, or null when they don't touch */
+  function pushNeeded(A, B, pad) {
+    var ca = unionBox(A), cb = unionBox(B);
+    if (!(ca.x0 < cb.x1 + pad && cb.x0 < ca.x1 + pad && ca.y0 < cb.y1 + pad && cb.y0 < ca.y1 + pad)) return null;
+    var sx = (cb.x0 + cb.x1) - (ca.x0 + ca.x1) >= 0 ? 1 : -1, sy = (cb.y0 + cb.y1) - (ca.y0 + ca.y1) >= 0 ? 1 : -1;
+    var need = false, bx = 0, by = 0;
+    for (var i = 0; i < A.length; i++) for (var j = 0; j < B.length; j++) {
+      var a = A[i], b = B[j];
+      if (!(a.x0 < b.x1 + pad && b.x0 < a.x1 + pad && a.y0 < b.y1 + pad && b.y0 < a.y1 + pad)) continue;
+      need = true;
+      bx = Math.max(bx, sx > 0 ? a.x1 + pad - b.x0 : b.x1 + pad - a.x0);
+      by = Math.max(by, sy > 0 ? a.y1 + pad - b.y0 : b.y1 + pad - a.y0);
     }
-    return { tabs: tabs, place: place, X: X, Y: Y, sy: sy, syl: syl, colX: colX, hallR: hallR, yDoor: yDoor, yRope: yRope, floorW: floorW };
+    if (!need) return null;
+    return bx <= by ? { dx: sx * bx, dy: 0 } : { dx: 0, dy: sy * by };
+  }
+  /* Tables that end up touching get nudged apart just enough to keep every name readable */
+  function resolveBodies(bodies, tabs, place, pinN, obstacles) {
+    var PAD = 6;
+    function rects(b) { return b.rects || (b.rects = bodyRects(tabs, place, b.members)); }
+    function shift(b, dx, dy) { b.members.forEach(function (m) { place[m].x += dx; place[m].y += dy; }); b.rects = null; b.moved = true; }
+    bodies.forEach(function (b) {
+      b.pinned = pinN != null && b.members.indexOf(pinN) !== -1;
+      b.onFloor = obstacles.some(function (o) { return !!pushNeeded([o], rects(b), 0); });
+    });
+    for (var it = 0; it < 90; it++) {
+      var moved = false;
+      for (var i = 0; i < bodies.length; i++) for (var j = i + 1; j < bodies.length; j++) {
+        var A = bodies[i], B = bodies[j];
+        if (A.pinned && B.pinned) continue;
+        var mv = pushNeeded(rects(A), rects(B), PAD);
+        if (!mv) continue;
+        moved = true;
+        if (A.pinned) shift(B, mv.dx, mv.dy);
+        else if (B.pinned) shift(A, -mv.dx, -mv.dy);
+        else { shift(A, -mv.dx / 2, -mv.dy / 2); shift(B, mv.dx / 2, mv.dy / 2); }
+      }
+      bodies.forEach(function (B) {
+        if (B.pinned || B.onFloor) return;
+        obstacles.forEach(function (o) { var mv = pushNeeded([o], rects(B), 12); if (mv) { shift(B, mv.dx, mv.dy); moved = true; } });
+      });
+      if (!moved) break;
+    }
+  }
+  function defaultSpot(R, n) {
+    if (T[n]) return { x: R.X(T[n].cx), y: R.Y(T[n].cy) };
+    return { x: R.X((PL.fx0 + PL.fx1) / 2), y: R.Y(PL.rope) + 140 };
+  }
+  function freeLayout(P, pinN, opt) {
+    opt = opt || {};
+    var tm = S.tmove, nums = tableNums();
+    if (tm && tm.isNew && nums.indexOf(tm.n) === -1) nums = nums.concat([tm.n]).sort(function (a, b) { return a - b; });
+    var tabs = buildTabs(nums, tableSpec);
+    var R = roomMaps(P);
+    var L = effLinks(nums, opt);
+    function pos(m) {
+      if (tm && tm.n === m) return tm.pos;
+      if (tm && tm.fixed && tm.fixed[m]) return tm.fixed[m];
+      var t = tinfo(m);
+      if (t && t.x != null && t.y != null) return { x: t.x, y: t.y };
+      return defaultSpot(R, m);
+    }
+    var st = stackUp(nums, tabs, L, pos);
+    var floor = { x0: R.X(PL.fx0), x1: R.X(PL.fx1), y0: R.Y(PL.fy0), y1: R.Y(PL.fy1) };
+    if (!opt.noResolve) resolveBodies(st.bodies, tabs, st.place, pinN, [floor]);
+    return { tabs: tabs, place: st.place, X: R.X, Y: R.Y, P: P, sy: P.sy, syl: P.syl, colX: P.colX, hallR: P.hallR, yDoor: P.yDoor, yRope: P.yRope, floorW: P.floorW, nums: nums, links: L, bodies: st.bodies, free: true };
+  }
+  function layout() {
+    var P = S.meta && S.meta.room;
+    if (P && P.XB && P.colX) return freeLayout(P, S.tmove ? S.tmove.n : null);
+    return autoLayout();
+  }
+  /* Try a change without saving it, to see where everything would land */
+  function simulate(upd, pinN) {
+    var P = S.meta && S.meta.room;
+    if (!P) return null;
+    var saved = S.tables, savedTm = S.tmove, clone = new Map();
+    saved.forEach(function (t, k) { clone.set(k, Object.assign({}, t)); });
+    Object.keys(upd).forEach(function (k) { var n = +k; clone.set(n, Object.assign({}, clone.get(n) || { id: tid(n), num: n }, upd[k])); });
+    S.tables = clone; S.tmove = null;
+    try { var M = freeLayout(P, pinN); M.tables = clone; return M; }
+    finally { S.tables = saved; S.tmove = savedTm; }
   }
 
   /* ================= Drawing the venue ================= */
@@ -946,11 +1239,11 @@ body.readonly .seat:hover .hl{fill:transparent}
   /* ================= Drawing tables, chairs and names ================= */
   function drawTables(M) {
     var tl = [], sl = [];
-    TABLES.forEach(function (n) {
+    M.nums.forEach(function (n) {
       var tb = M.tabs[n], p = M.place[n], t = tb.t;
       var over = tb.seats.some(function (s) { return s.state === 'over'; });
-      var bb = tb.bb;
-      var g = '<g class="tbl' + (over ? ' over' : '') + '" data-t="' + n + '" transform="translate(' + f1(p.x) + ',' + f1(p.y) + ')">';
+      var bb = tb.bb, mv = !!S.tmove && S.tmove.n === n, ar = !!S.arrange && S.arrange.n === n;
+      var g = '<g class="tbl' + (over ? ' over' : '') + (mv ? ' tmove' : '') + (ar ? ' arr' : '') + '" data-t="' + n + '" transform="translate(' + f1(p.x) + ',' + f1(p.y) + ')">';
       g += '<rect class="thit" x="' + f1(bb.x0 - 6) + '" y="' + f1(bb.y0 - 6) + '" width="' + f1(bb.x1 - bb.x0 + 12) + '" height="' + f1(bb.y1 - bb.y0 + 12) + '"/>';
       var numSize = 26;
       if (t.kind === 'long') g += '<rect class="tshape" x="' + (-K.LTW / 2) + '" y="' + f1(-tb.len / 2) + '" width="' + K.LTW + '" height="' + f1(tb.len) + '"/>';
@@ -961,12 +1254,12 @@ body.readonly .seat:hover .hl{fill:transparent}
       g += '<text class="tnum" y="' + f1(ny) + '" font-size="' + numSize + '">' + n + '</text></g>';
       tl.push(g);
 
-      var s2 = '<g transform="translate(' + f1(p.x) + ',' + f1(p.y) + ')">';
+      var s2 = '<g class="tseats' + (mv ? ' tmove' : '') + (ar ? ' arr' : '') + '" data-t="' + n + '" transform="translate(' + f1(p.x) + ',' + f1(p.y) + ')">';
       tb.seats.forEach(function (s) {
         var r2 = rectOfLabel(s), c = chairRect(s);
         var hx0 = Math.min(r2.x0, c.x0) - 3, hx1 = Math.max(r2.x1, c.x1) + 3, hy0 = Math.min(r2.y0, c.y0) - 3, hy1 = Math.max(r2.y1, c.y1) + 3;
         var attrs = ' data-t="' + n + '" data-k="' + s.k + '"' + (s.guest ? ' data-gid="' + esc(s.guest.id) + '"' : '');
-        s2 += '<g class="seat ' + s.state + '"' + attrs + '>';
+        s2 += '<g class="seat ' + s.state + (ar && S.arrange.pick === s.k ? ' picked' : '') + '"' + attrs + '>';
         s2 += '<rect class="shit" x="' + f1(hx0) + '" y="' + f1(hy0) + '" width="' + f1(hx1 - hx0) + '" height="' + f1(hy1 - hy0) + '"/>';
         s2 += '<rect class="hl" x="' + f1(r2.x0 - 3) + '" y="' + f1(r2.y0 - 2) + '" width="' + f1(r2.x1 - r2.x0 + 6) + '" height="' + f1(r2.y1 - r2.y0 + 4) + '" rx="4"/>';
         s2 += '<rect class="chair" x="' + (-K.CW / 2) + '" y="' + (-K.CD / 2) + '" width="' + K.CW + '" height="' + K.CD + '" rx="3.5" transform="translate(' + f1(s.cx) + ',' + f1(s.cy) + ') rotate(' + f1(s.rot) + ')"/>';
@@ -979,6 +1272,10 @@ body.readonly .seat:hover .hl{fill:transparent}
           s2 += '<text class="n2" x="' + f1(s.lx) + '" y="' + f1(s.top + 24) + '" text-anchor="' + anchor + '"' + squeeze(lab.w, lab.ws[1]) + '>' + esc(lab.lines[1]) + '</text>';
         }
         s2 += '</g>';
+      });
+      if (ar) slotsFor(M, n).forEach(function (sl2) {
+        s2 += '<g class="slot" data-t="' + n + '" data-j="' + sl2.j + '" data-side="' + (sl2.side || '') + '" transform="translate(' + f1(sl2.x) + ',' + f1(sl2.y) + ')" role="button" aria-label="Put a seat here">' +
+          '<circle class="shit2" r="11"/><circle class="sc" r="8"/><path class="sp" d="M-3.8 0H3.8M0 -3.8V3.8"/></g>';
       });
       s2 += '</g>';
       sl.push(s2);
@@ -1009,7 +1306,10 @@ body.readonly .seat:hover .hl{fill:transparent}
     derive();
     if (S.failed === 'nokey' || S.failed === 'badkey') { gateMsg(); return; }
     if (!S.fontsReady || (!S.failed && !(S.loadedG && S.loadedT))) return;
-    var sig = JSON.stringify(TABLES.map(function (n) { return [seatsOf(n), at(n).map(function (g) { return [g.id, g.name, g.order]; })]; }));
+    var tmv = S.tmove;
+    var sig = JSON.stringify([tableNums().map(function (n) { var t = tinfo(n) || {}; return [n, seatsOf(n), t.kind, t.end, t.link, t.x, t.y, at(n).map(function (g) { return [g.id, g.name, g.order]; })]; }),
+      tmv ? [tmv.n, tmv.pos, tmv.attach, tmv.kind, tmv.seats, tmv.isNew] : 0, S.meta && S.meta.room ? 1 : 0,
+      S.arrange ? [S.arrange.n, S.arrange.pick] : 0, tableNums().map(function (n) { var t = tinfo(n); return t && t.sides ? [t.sides.t, t.sides.r, t.sides.b, t.sides.l] : 0; })]);
     if (sig === planSig && S.lay) return;
     planSig = sig;
     var M = layout();
@@ -1039,6 +1339,9 @@ body.readonly .seat:hover .hl{fill:transparent}
     tblEls.forEach(function (e, n) { e.classList.toggle('cur', !!selG && selG.table === n); });
     document.body.classList.toggle('moving', !!S.sel);
     document.body.classList.toggle('readonly', S.canWrite === false || !!S.failed);
+    document.body.classList.toggle('tmoving', !!S.tmove);
+    document.body.classList.toggle('arranging', !!S.arrange);
+    document.body.classList.toggle('picking', !!(S.arrange && S.arrange.pick));
   }
   function renderAll() {
     renderPlan();
@@ -1047,6 +1350,8 @@ body.readonly .seat:hover .hl{fill:transparent}
     renderBanner();
     renderUnseated();
     renderMoveBar();
+    renderTableBar();
+    renderArrangeBar();
     renderResults();
     renderUndo();
     renderPanel();
@@ -1057,7 +1362,7 @@ body.readonly .seat:hover .hl{fill:transparent}
 
   function renderSrList() {
     var h = '<h2>Seating by table</h2>';
-    TABLES.forEach(function (n) {
+    tableNums().forEach(function (n) {
       var m = seatMap(n);
       var names = m.chairs.filter(Boolean).concat(m.over).map(function (g) { return esc(g.name); });
       h += '<h3>' + PlaceName(n) + ', ' + seatsOf(n) + ' seats</h3><p>' + (names.length ? names.join(', ') : 'No one yet') + '</p>';
@@ -1069,7 +1374,7 @@ body.readonly .seat:hover .hl{fill:transparent}
     var st = $('#stats');
     if (S.failed || !S.loadedG) { st.innerHTML = ''; return; }
     var seated = 0, open = 0, over = [];
-    TABLES.forEach(function (n) { var c = at(n).length, s = seatsOf(n); seated += c; if (s > c) open += s - c; if (c > s) over.push(n); });
+    tableNums().forEach(function (n) { var c = at(n).length, s = seatsOf(n); seated += c; if (s > c) open += s - c; if (c > s) over.push(n); });
     var uns = at(0).length;
     var h = '<span class="chip"><b>' + seated + '</b>&nbsp;seated &middot; <b>' + open + '</b>&nbsp;open seat' + (open === 1 ? '' : 's') + '</span>';
     if (uns) h += '<span class="chip attn"><b>' + uns + '</b> not seated yet</span>';
@@ -1115,8 +1420,8 @@ body.readonly .seat:hover .hl{fill:transparent}
     $('#mb-takeoff').hidden = !g.table;
     $('#mb-delete').hidden = !!g.table;
     var html = '';
-    TABLES.forEach(function (n) {
-      if (n === 29) return;
+    tableNums().forEach(function (n) {
+      if (isSweet(n)) return;
       var o = openCount(n), here = g.table === n;
       html += '<button type="button" class="' + (here ? 'here' : o > 0 ? 'open' : 'full') + '" data-to="' + n + '"' + (here ? ' disabled' : '') + ' aria-label="' + PlaceName(n) + (here ? ', here now' : o > 0 ? ', ' + o + ' open' : ', full') + '"><span class="n">' + n + '</span><span class="s">' + (here ? 'here' : o > 0 ? o + ' open' : 'full') + '</span></button>';
     });
@@ -1125,13 +1430,13 @@ body.readonly .seat:hover .hl{fill:transparent}
     setMbH();
     if (wasHidden) setTimeout(setMbH, 60);
   }
-  function setMbH() { var mb = $('#movebar'); document.documentElement.style.setProperty('--mb-h', (mb.hidden ? 0 : Math.ceil(mb.getBoundingClientRect().height)) + 'px'); }
+  function setMbH() { var mb = $('#movebar'), tb = $('#tmbar'), ab = $('#arbar'), el = !mb.hidden ? mb : !tb.hidden ? tb : !ab.hidden ? ab : null; document.documentElement.style.setProperty('--mb-h', (el ? Math.ceil(el.getBoundingClientRect().height) : 0) + 'px'); }
 
   function searchItems() {
     var q = S.qn, out = [];
     if (!q) return out;
     var tm = q.replace(/^table\s*/, '');
-    if (/^\d{1,2}$/.test(tm)) { var n = +tm; if (n >= 1 && n <= 29) out.push({ kind: 't', n: n, label: PlaceName(n), where: at(n).length + ' of ' + seatsOf(n) + ' seats' }); }
+    if (/^\d{1,2}$/.test(tm)) { var n = +tm; if (S.tables.has(n)) out.push({ kind: 't', n: n, label: PlaceName(n), where: at(n).length + ' of ' + seatsOf(n) + ' seats' }); }
     var hits = [];
     S.guests.forEach(function (g) {
       var nn = norm(g.name), i = nn.indexOf(q);
@@ -1161,6 +1466,7 @@ body.readonly .seat:hover .hl{fill:transparent}
     b.disabled = !u || !canEdit();
     b.title = u ? 'Undo: ' + u.label : 'Nothing to undo yet';
     $('#btn-add').hidden = !canEdit();
+    $('#btn-addtable').hidden = !canEdit() || !(S.lay && S.lay.free);
   }
 
   /* ================= Table panel ================= */
@@ -1168,17 +1474,18 @@ body.readonly .seat:hover .hl{fill:transparent}
   function closePanel() { if (!S.panel) return; S.panel = null; renderPanel(); }
   function renderPanel() {
     var p = $('#panel'), ctx = S.panel;
-    if (!ctx || S.sel) { p.hidden = true; return; }
+    if (!ctx || S.sel || S.tmove || S.arrange) { p.hidden = true; return; }
     var n = ctx.t, seats = seatsOf(n), people = at(n).length, open = Math.max(0, seats - people), ed = canEdit();
     var acts = '';
     if (ctx.k) {
       $('#panel-h').textContent = 'Open seat at ' + placeName(n);
-      $('#panel-sub').textContent = KIND_NAME[T[n].kind] + ' · ' + people + ' of ' + seats + ' seats taken';
-      if (ed) acts = '<button type="button" class="btn primary" data-act="add-here">Add a guest here</button><button type="button" class="btn" data-act="rm-this">Remove this seat</button>';
+      $('#panel-sub').textContent = KIND_NAME[kindOf(n)] + ' · ' + people + ' of ' + seats + ' seats taken';
+      if (ed) acts = '<button type="button" class="btn primary" data-act="add-here">Add a guest here</button><button type="button" class="btn" data-act="mv-this">Move this seat</button><button type="button" class="btn" data-act="rm-this">Remove this seat</button>';
     } else {
       $('#panel-h').textContent = PlaceName(n);
-      $('#panel-sub').textContent = KIND_NAME[T[n].kind] + ' · ' + people + (people === 1 ? ' guest' : ' guests') + ' · ' + seats + ' seats' + (people > seats ? ' · ' + (people - seats) + ' more names than chairs' : open ? ' · ' + open + ' open' : ' · full');
-      if (ed) acts = '<button type="button" class="btn" data-act="add-seat">+ Add a seat</button><button type="button" class="btn" data-act="rm-seat"' + (open ? '' : ' disabled') + '>&minus; Remove an empty seat</button><button type="button" class="btn primary" data-act="add-guest">Add a guest</button>';
+      $('#panel-sub').textContent = KIND_NAME[kindOf(n)] + ' · ' + people + (people === 1 ? ' guest' : ' guests') + ' · ' + seats + ' seats' + (people > seats ? ' · ' + (people - seats) + ' more names than chairs' : open ? ' · ' + open + ' open' : ' · full');
+      if (ed) acts = '<button type="button" class="btn" data-act="add-seat">+ Add a seat</button><button type="button" class="btn" data-act="arrange">Move seats</button><button type="button" class="btn" data-act="rm-seat"' + (open ? '' : ' disabled') + '>&minus; Remove an empty seat</button><button type="button" class="btn primary" data-act="add-guest">Add a guest</button>';
+      if (ed && S.lay && S.lay.free) acts += '<div class="acts2"><button type="button" class="btn" data-act="t-move">Move table</button><button type="button" class="btn" data-act="t-shape">Change shape</button><button type="button" class="btn quiet-danger" data-act="t-remove">Remove table</button></div>';
     }
     $('#panel-acts').innerHTML = acts;
     p.hidden = false;
@@ -1188,11 +1495,15 @@ body.readonly .seat:hover .hl{fill:transparent}
     var b = e.target.closest('[data-act]');
     if (!b || !S.panel) return;
     var ctx = S.panel, a = b.dataset.act;
-    if (a === 'add-seat') changeSeats(ctx.t, 1);
+    if (a === 'add-seat' || a === 'arrange') startArrange(ctx.t, null);
+    else if (a === 'mv-this') startArrange(ctx.t, ctx.k);
     else if (a === 'rm-seat') removeEmptySeat(ctx.t);
     else if (a === 'add-guest') { openAdd(ctx.t, null); }
     else if (a === 'add-here') { openAdd(ctx.t, ctx.k); }
     else if (a === 'rm-this') { var t = ctx.t, k = ctx.k; closePanel(); removeSeatAt(t, k); }
+    else if (a === 't-move') { var tn = ctx.t; closePanel(); startTableMove(tn); }
+    else if (a === 't-shape') { openShape(ctx.t); }
+    else if (a === 't-remove') { if (at(ctx.t).length) removeTable(ctx.t); else openConfirmTable(ctx.t); }
   });
 
   /* ================= Pan and zoom ================= */
@@ -1205,7 +1516,7 @@ body.readonly .seat:hover .hl{fill:transparent}
     var M = S.lay;
     if (!M) return null;
     var b = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
-    TABLES.forEach(function (n) { var tb = M.tabs[n], p = M.place[n]; b.x0 = Math.min(b.x0, p.x + tb.bb.x0); b.x1 = Math.max(b.x1, p.x + tb.bb.x1); b.y0 = Math.min(b.y0, p.y + tb.bb.y0); b.y1 = Math.max(b.y1, p.y + tb.bb.y1); });
+    M.nums.forEach(function (n) { var tb = M.tabs[n], p = M.place[n]; b.x0 = Math.min(b.x0, p.x + tb.bb.x0); b.x1 = Math.max(b.x1, p.x + tb.bb.x1); b.y0 = Math.min(b.y0, p.y + tb.bb.y0); b.y1 = Math.max(b.y1, p.y + tb.bb.y1); });
     b.y0 = Math.min(b.y0, M.Y(205) - 20);
     return b;
   }
@@ -1257,7 +1568,7 @@ body.readonly .seat:hover .hl{fill:transparent}
     var v = viewFor(b, Math.min(90, s.w * 0.12));
     v.k = Math.max(minK || 0, Math.min(v.k, 1.5));
     var cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
-    var bottomPad = S.panel || S.sel ? 90 : 0;
+    var bottomPad = S.panel || S.sel || S.arrange || S.tmove ? 110 : 0;
     animateTo({ k: v.k, x: s.w / 2 - cx * v.k, y: (s.h - bottomPad) / 2 - cy * v.k });
   }
   function flyToGuest(gid) {
@@ -1275,7 +1586,11 @@ body.readonly .seat:hover .hl{fill:transparent}
     var p = rel(e);
     pointers.set(e.pointerId, p);
     try { svg.setPointerCapture(e.pointerId); } catch (err) {}
-    if (pointers.size === 1) gesture = { type: 'tap', start: p, view: { k: view.k, x: view.x, y: view.y }, target: e.target, moved: false };
+    var tdt = pointers.size === 1 && S.tmove && e.target instanceof Element ? e.target.closest('[data-t]') : null;
+    if (tdt && +tdt.getAttribute('data-t') === S.tmove.n) {
+      var cur0 = S.tmove.attach && S.lay && S.lay.place[S.tmove.n] ? S.lay.place[S.tmove.n] : S.tmove.pos;
+      gesture = { type: 'tdrag', start: p, orig: { x: cur0.x, y: cur0.y }, moved: false };
+    } else if (pointers.size === 1) gesture = { type: 'tap', start: p, view: { k: view.k, x: view.x, y: view.y }, target: e.target, moved: false };
     else if (pointers.size === 2) {
       var pts = Array.from(pointers.values());
       gesture = { type: 'pinch', d0: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), m0: { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }, view: { k: view.k, x: view.x, y: view.y } };
@@ -1290,6 +1605,12 @@ body.readonly .seat:hover .hl{fill:transparent}
     var p = rel(e);
     pointers.set(e.pointerId, p);
     if (!gesture) return;
+    if (gesture.type === 'tdrag') {
+      var ddx = p.x - gesture.start.x, ddy = p.y - gesture.start.y;
+      if (!gesture.moved && Math.hypot(ddx, ddy) > 4) { gesture.moved = true; if (S.tmove) S.tmove.attach = null; }
+      if (gesture.moved && S.tmove) { S.tmove.pos = { x: gesture.orig.x + ddx / view.k, y: gesture.orig.y + ddy / view.k }; dragPaint(); }
+      return;
+    }
     if (gesture.type === 'pinch' && pointers.size >= 2) {
       var pts = Array.from(pointers.values());
       var d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), m = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
@@ -1310,11 +1631,15 @@ body.readonly .seat:hover .hl{fill:transparent}
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
     try { svg.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (gesture && gesture.type === 'tdrag') {
+      if (pointers.size === 0) { var g0 = gesture; gesture = null; if (g0.moved) dropTable(); }
+      return;
+    }
     if (gesture && gesture.type === 'tap' && pointers.size === 0 && e.type === 'pointerup') {
       var now = performance.now(), p = gesture.start, target = gesture.target;
-      var onThing = target instanceof Element && target.closest('.seat, .tbl');
-      if (!onThing && now - lastTap.t < 320 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 24) { zoomAt(p.x, p.y, 1.8); lastTap.t = 0; }
-      else { lastTap = { t: now, x: p.x, y: p.y }; onPlanTap(target); }
+      var onThing = target instanceof Element && target.closest('.seat, .tbl, .slot');
+      if (!onThing && !S.tmove && now - lastTap.t < 320 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 24) { zoomAt(p.x, p.y, 1.8); lastTap.t = 0; }
+      else { lastTap = { t: now, x: p.x, y: p.y }; onPlanTap(target, p); }
     }
     if (pointers.size === 0) { gesture = null; svg.classList.remove('panning'); }
     else if (pointers.size === 1 && gesture && gesture.type === 'pinch') {
@@ -1346,7 +1671,16 @@ body.readonly .seat:hover .hl{fill:transparent}
   if (typeof ResizeObserver === 'function') new ResizeObserver(function () { if (!S.fitted || !S.lay) return; if (!S.userView) fitView(false); else applyView(); }).observe(stage);
 
   /* ================= Taps on the plan ================= */
-  function onPlanTap(target) {
+  function onPlanTap(target, pt) {
+    if (S.tmove) {
+      var own = target instanceof Element ? target.closest('[data-t]') : null;
+      if (!pt || (own && +own.getAttribute('data-t') === S.tmove.n)) return;
+      S.tmove.pos = { x: (pt.x - view.x) / view.k, y: (pt.y - view.y) / view.k };
+      S.tmove.attach = null;
+      dropTable();
+      return;
+    }
+    if (S.arrange) { arrangeTap(target); return; }
     if (!(target instanceof Element)) return;
     var seat = target.closest('.seat'), tbl = target.closest('.tbl');
     var n = seat ? +seat.getAttribute('data-t') : tbl ? +tbl.getAttribute('data-t') : null;
@@ -1403,12 +1737,6 @@ body.readonly .seat:hover .hl{fill:transparent}
     return ensureName().then(fn).then(function (r) { return r !== false; }, function (err) { writeFailed(err); return false; });
   }
   function gref(id) { return S.db.doc('guests/' + id); }
-  function writeSeats(n, seats) {
-    seats = Math.max(0, Math.min(30, seats));
-    var t = S.tables.get(n);
-    if (t) return S.db.doc('tables/' + t.id).update({ seats: seats });
-    return S.db.doc('tables/' + tid(n)).set({ num: n, seats: seats });
-  }
   function seq(list, fn) { return list.reduce(function (p, x) { return p.then(function () { return fn(x); }); }, Promise.resolve()); }
   function log(text) {
     if (!S.db) return;
@@ -1416,6 +1744,7 @@ body.readonly .seat:hover .hl{fill:transparent}
   }
   function pushUndo(label, run) { S.undo.push({ label: label, run: run }); if (S.undo.length > 40) S.undo.shift(); renderUndo(); }
   function undo() {
+    if (S.tmove) cancelTableMove();
     var u = S.undo.pop();
     renderUndo();
     if (!u) return;
@@ -1425,37 +1754,269 @@ body.readonly .seat:hover .hl{fill:transparent}
     }, writeFailed);
   }
 
+  /* ================= Chairs =================
+     Chairs are numbered clockwise and a guest sits in chair number `order`.
+     Every change here rewrites the table's chair count (and sides) and renumbers the guests in one batch. */
+  function applyWrite(w) { S.db.doc(w.c + '/' + w.id).update(w.d); }
+  function snapTable(n) {
+    var t = tinfo(n) || {}, orders = {};
+    at(n).forEach(function (g) { orders[g.id] = g.order; });
+    return { seats: seatsOf(n), sides: t.sides == null ? null : JSON.parse(JSON.stringify(t.sides)), orders: orders };
+  }
+  function restoreTable(n, snap) {
+    if (!S.tables.has(n)) return;
+    S.db.doc('tables/' + tid(n)).update({ seats: snap.seats, sides: snap.sides });
+    Object.keys(snap.orders).forEach(function (id) {
+      var g = S.guests.get(id);
+      if (g && g.table === n && g.order !== snap.orders[id]) gref(id).update({ order: snap.orders[id] });
+    });
+  }
+  function chairModel(n) {
+    var M = S.lay, tb = M && M.tabs ? M.tabs[n] : null, m = seatMap(n), kind = kindOf(n), longT = kind === 'long' || kind === 'longh';
+    var chairs = m.chairs.map(function (g, i) { var sv = tb && tb.seats[i]; return { side: longT && sv && sv.side ? sv.side : null, g: g || null }; });
+    if (longT && chairs.some(function (c) { return !c.side; })) {
+      var t = tinfo(n), sd = t && validSides(kind, t.sides, chairs.length) ? t.sides : defaultSides(kind, tableSpec(n).end, chairs.length), i = 0;
+      ['t', 'r', 'b', 'l'].forEach(function (x) { for (var c = 0; c < sd[x]; c++) if (chairs[i]) chairs[i++].side = x; });
+    }
+    return { n: n, kind: kind, long: longT, chairs: chairs, over: m.over.slice() };
+  }
+  function commitChairs(n, model) {
+    var over = model.over.slice();
+    model.chairs.forEach(function (c) { if (!c.g && over.length) c.g = over.shift(); });
+    var cap = model.chairs.length, sides = null;
+    if (model.long) { sides = { t: 0, r: 0, b: 0, l: 0 }; model.chairs.forEach(function (c) { sides[c.side || (model.kind === 'long' ? 'r' : 't')]++; }); }
+    var writes = [{ c: 'tables', id: tid(n), d: { seats: cap, sides: sides } }];
+    model.chairs.forEach(function (c, i) {
+      if (!c.g) return;
+      var g = S.guests.get(c.g.id) || c.g, d = {};
+      if (g.table !== n) d.table = n;
+      if (g.order !== i + 1) d.order = i + 1;
+      if (Object.keys(d).length) writes.push({ c: 'guests', id: c.g.id, d: d });
+    });
+    over.forEach(function (g, i) { var o = cap + 1 + i; if (g.order !== o) writes.push({ c: 'guests', id: g.id, d: { order: o } }); });
+    return writes;
+  }
+  function defaultSlot(model) {
+    var cap = model.chairs.length;
+    if (!model.long) return { j: cap + 1, side: null };
+    var cnt = { t: 0, r: 0, b: 0, l: 0 };
+    model.chairs.forEach(function (c) { cnt[c.side]++; });
+    var A = model.kind === 'long' ? 'r' : 't', B = model.kind === 'long' ? 'l' : 'b', side = cnt[A] <= cnt[B] ? A : B;
+    var start = { t: 1, r: 1 + cnt.t, b: 1 + cnt.t + cnt.r, l: 1 + cnt.t + cnt.r + cnt.b };
+    return { j: start[side] + cnt[side], side: side };
+  }
+  /* Where a chair ended up, in words: "on the left side of Table 2", "at Table 5 between Ana and Ben" */
+  function spotWords(model, j, side) {
+    var n = model.n, T2 = placeName(n);
+    if (model.long) {
+      var vert = model.kind === 'long';
+      return ({ t: vert ? 'at the top end of ' : 'on the top side of ', r: vert ? 'on the right side of ' : 'at the right end of ', b: vert ? 'at the bottom end of ' : 'on the bottom side of ', l: vert ? 'on the left side of ' : 'at the left end of ' }[side] || 'at ') + T2;
+    }
+    var len = model.chairs.length;
+    if (len < 3) return 'at ' + T2;
+    var prev = model.chairs[(j - 2 + len) % len], next = model.chairs[j % len];
+    function who(c) { return c && c.g ? c.g.name : 'an open seat'; }
+    return 'at ' + T2 + ' between ' + who(prev) + ' and ' + who(next);
+  }
+  function addChair(n, slot) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
+    var model = chairModel(n);
+    if (model.chairs.length >= 30) { toast(PlaceName(n) + ' already has 30 seats.'); return Promise.resolve(); }
+    var j = Math.max(1, Math.min(model.chairs.length + 1, slot.j));
+    model.chairs.splice(j - 1, 0, { side: model.long ? slot.side : null, g: null });
+    var where = spotWords(model, j, slot.side), snap = snapTable(n), writes = commitChairs(n, model), cap = model.chairs.length;
+    return guarded(function () { writes.forEach(applyWrite); }).then(function (ok) {
+      if (!ok) return;
+      log('Added a seat ' + where + ' (now ' + cap + ')');
+      pushUndo('add a seat at ' + placeName(n), function () {
+        restoreTable(n, snap);
+        log('Undo: took the new seat away from ' + placeName(n));
+        return 'Took the new seat away from ' + placeName(n) + '.';
+      });
+      toast('Added a seat ' + where + '. It has ' + cap + ' now.', true);
+    });
+  }
+  function moveChair(n, k, slot) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
+    var model = chairModel(n), ch = model.chairs[k - 1], j = slot.j;
+    if (!ch) return Promise.resolve();
+    if ((j === k || j === k + 1) && (!model.long || slot.side === ch.side)) { toast('That seat is already there.'); return Promise.resolve(); }
+    model.chairs.splice(k - 1, 1);
+    if (j > k) j -= 1;
+    model.chairs.splice(j - 1, 0, { side: model.long ? slot.side : null, g: ch.g });
+    var where = spotWords(model, j, slot.side), snap = snapTable(n), writes = commitChairs(n, model);
+    var what = ch.g ? ch.g.name + '’s seat' : 'an open seat';
+    return guarded(function () { writes.forEach(applyWrite); }).then(function (ok) {
+      if (!ok) return;
+      log('Moved ' + what + ' ' + where);
+      pushUndo('move ' + what, function () {
+        restoreTable(n, snap);
+        log('Undo: put ' + what + ' back at ' + placeName(n));
+        return 'Put ' + what + ' back.';
+      });
+      if (ch.g) flashGuest(ch.g.id);
+      toast('Moved ' + what + ' ' + where + '.', true);
+    });
+  }
+  function removeChair(n, k) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
+    var model = chairModel(n), ch = model.chairs[k - 1];
+    if (!ch) return Promise.resolve();
+    if (ch.g) { toast('Someone is sitting in that seat. Move them first.'); return Promise.resolve(); }
+    model.chairs.splice(k - 1, 1);
+    var snap = snapTable(n), writes = commitChairs(n, model), cap = model.chairs.length;
+    return guarded(function () { writes.forEach(applyWrite); }).then(function (ok) {
+      if (!ok) return;
+      log('Removed an empty seat from ' + placeName(n) + ' (now ' + cap + ')');
+      pushUndo('remove a seat at ' + placeName(n), function () {
+        restoreTable(n, snap);
+        log('Undo: put a seat back at ' + placeName(n));
+        return 'Put the seat back at ' + placeName(n) + '.';
+      });
+      toast('Removed an empty seat from ' + placeName(n) + '. It has ' + cap + ' now.', true);
+    });
+  }
+  function removeEmptySeat(n) {
+    var m = seatMap(n), k = -1;
+    for (var i = m.chairs.length - 1; i >= 0; i--) if (!m.chairs[i]) { k = i + 1; break; }
+    if (k === -1) { toast(PlaceName(n) + ' has no empty seat to remove. Move someone to another table first.'); return Promise.resolve(); }
+    return removeChair(n, k);
+  }
+  function removeSeatAt(n, k) { return removeChair(n, k); }
+
+  /* The + marks for a table: every spot a chair can go, in the table's own coordinates.
+     They sit on the tabletop, between the chairs they go between, so they never cover a chair or a name. */
+  function slotsFor(M, n) {
+    var tb = M && M.tabs ? M.tabs[n] : null;
+    if (!tb) return [];
+    var kind = tb.t.kind, regs = tb.seats.filter(function (s) { return s.state !== 'over'; }), out = [];
+    if (kind === 'round' || kind === 'round72') {
+      var nAll = Math.max(1, tb.seats.length), Rm = tb.R > 30 ? tb.R - 11 : tb.R * 0.6;
+      if (!regs.length) return [{ j: 1, side: null, x: 0, y: -Rm }];
+      regs.forEach(function (s, i) {
+        var th = Math.atan2(s.cx, -s.cy) + Math.PI / nAll;
+        out.push({ j: i + 2, side: null, x: Rm * Math.sin(th), y: -Rm * Math.cos(th) });
+      });
+      return out;
+    }
+    if (kind === 'sweet') {
+      if (!regs.length) return [{ j: 1, side: null, x: 0, y: 9 }];
+      out.push({ j: 1, side: null, x: regs[0].cx - 12, y: 9 });
+      regs.forEach(function (s, i) { var nx = regs[i + 1]; out.push({ j: i + 2, side: null, x: nx ? (s.cx + nx.cx) / 2 : s.cx + 12, y: 9 }); });
+      return out;
+    }
+    var vert = kind === 'long', bySide = { t: [], r: [], b: [], l: [] }, cnt = { t: 0, r: 0, b: 0, l: 0 };
+    tb.seats.forEach(function (s2) { if (s2.side) bySide[s2.side].push(s2); });
+    Object.keys(bySide).forEach(function (k2) { bySide[k2].sort(function (a, b) { return a.si - b.si; }); });
+    regs.forEach(function (s2) { if (s2.side) cnt[s2.side]++; });
+    var start = { t: 1, r: 1 + cnt.t, b: 1 + cnt.t + cnt.r, l: 1 + cnt.t + cnt.r + cnt.b };
+    var half = tb.len / 2, pitch = tb.pitch || K.PITCH, inset = 10, endOff = half + K.CG + K.CD / 2;
+    /* an end pushed up against another table in the same row has no room for a chair */
+    var L = M.links || {}, before = L[n] != null, after = M.nums.some(function (m) { return L[m] === n; });
+    var dir = vert ? { r: [0, 1], l: [0, -1] } : { t: [1, 0], b: [-1, 0] };
+    ['t', 'r', 'b', 'l'].forEach(function (side) {
+      var isEnd = vert ? (side === 't' || side === 'b') : (side === 'l' || side === 'r'), here = bySide[side], nReg = cnt[side];
+      if (isEnd) {
+        var blocked = (side === 't' || side === 'l') ? before : after;
+        if (!here.length && !blocked) out.push({ j: start[side], side: side, x: vert ? 0 : (side === 'r' ? endOff : -endOff), y: vert ? (side === 't' ? -endOff : endOff) : 0 });
+        return;
+      }
+      var d = dir[side], lane = (side === 'r' || side === 'b') ? inset : -inset;
+      function at2(v) { return vert ? { x: lane, y: v } : { x: v, y: lane }; }
+      if (!here.length) { var c0 = at2(0); out.push({ j: start[side], side: side, x: c0.x, y: c0.y }); return; }
+      for (var pos = 0; pos <= nReg; pos++) {
+        var v;
+        var a = vert ? 'cy' : 'cx', step = vert ? d[1] : d[0];
+        if (pos === 0) v = here[0][a] - step * pitch / 2;
+        else if (pos < here.length) v = (here[pos - 1][a] + here[pos][a]) / 2;
+        else v = here[pos - 1][a] + step * pitch / 2;
+        v = Math.max(-half + 6, Math.min(half - 6, v));
+        var q = at2(v);
+        out.push({ j: start[side] + pos, side: side, x: q.x, y: q.y });
+      }
+    });
+    return out;
+  }
+
+  /* Arranging chairs: + marks around one table; tap a + to add a chair, or tap a chair and then a + to move it */
+  function startArrange(n, pick) {
+    if (!canEdit()) { viewOnlyNote(); return; }
+    if (!S.tables.has(n)) return;
+    S.sel = null; S.panel = null; S.tmove = null;
+    S.arrange = { n: n, pick: pick || null };
+    scheduleRender();
+    flyToTable(n, 1.3);
+    announce('Seats at ' + placeName(n) + '. Tap a plus sign to add a seat there, or tap a seat to move it.');
+  }
+  function endArrange() { if (!S.arrange) return; S.arrange = null; scheduleRender(); }
+  function arrangeTap(target) {
+    var ar = S.arrange;
+    if (!ar || !(target instanceof Element)) return;
+    var slotEl = target.closest('.slot');
+    if (slotEl) {
+      var slot = { j: +slotEl.getAttribute('data-j'), side: slotEl.getAttribute('data-side') || null };
+      if (ar.pick) { var k = ar.pick; ar.pick = null; moveChair(ar.n, k, slot); } else addChair(ar.n, slot);
+      return;
+    }
+    var seatEl = target.closest('.seat'), tblEl = target.closest('.tbl');
+    var tn = seatEl ? +seatEl.getAttribute('data-t') : tblEl ? +tblEl.getAttribute('data-t') : null;
+    if (seatEl && tn === ar.n) {
+      var kk = +seatEl.getAttribute('data-k');
+      if (kk > seatsOf(ar.n)) return;
+      ar.pick = ar.pick === kk ? null : kk;
+      scheduleRender();
+      return;
+    }
+    if (tn && tn !== ar.n) { ar.n = tn; ar.pick = null; scheduleRender(); flyToTable(tn, 1.3); return; }
+    if (ar.pick) { ar.pick = null; scheduleRender(); }
+  }
+  function renderArrangeBar() {
+    var bar = $('#arbar'), ar = S.arrange;
+    if (ar && !S.tables.has(ar.n)) { S.arrange = null; ar = null; }
+    if (!ar) { if (!bar.hidden) { bar.hidden = true; setMbH(); } return; }
+    var m = seatMap(ar.n);
+    if (ar.pick && ar.pick > m.chairs.length) ar.pick = null;
+    var pickG = ar.pick ? m.chairs[ar.pick - 1] : null, was = bar.hidden, tap = fineMQ.matches ? 'Click' : 'Tap';
+    bar.hidden = false;
+    $('#ar-title').textContent = 'Seats at ' + placeName(ar.n);
+    var hint = !ar.pick ? tap + ' a + to add a seat there. ' + tap + ' a seat to move it.'
+      : pickG ? 'Now ' + tap.toLowerCase() + ' the + where ' + pickG.name + '’s seat should go.' : 'Now ' + tap.toLowerCase() + ' the + where this open seat should go, or remove it.';
+    if ($('#ar-hint').textContent !== hint) $('#ar-hint').textContent = hint;
+    $('#ar-remove').hidden = !ar.pick || !!pickG;
+    setMbH();
+    if (was) setTimeout(setMbH, 60);
+  }
+  $('#ar-done').addEventListener('click', endArrange);
+  $('#ar-remove').addEventListener('click', function () { var ar = S.arrange; if (!ar || !ar.pick) return; var k = ar.pick; ar.pick = null; removeChair(ar.n, k); });
+
   function moveGuest(id, to, seatK, opts) {
     opts = opts || {};
     var g = S.guests.get(id);
     if (!g || (g.table === to && !seatK)) return Promise.resolve();
-    var from = g.table, fromOrder = g.order, name = g.name, seatsAfter = null, chosen = null;
+    var from = g.table, fromOrder = g.order, name = g.name, seatsAfter = null, chosen = null, snap = null, writes = null;
+    if (to === 0) chosen = 0;
+    else if (seatK) chosen = seatK;
+    else chosen = freeChair(to);
+    if (to && chosen == null) {
+      if (!opts.addSeat) return Promise.resolve();
+      var model = chairModel(to), slot = defaultSlot(model);
+      model.chairs.splice(slot.j - 1, 0, { side: model.long ? slot.side : null, g: { id: id, name: name, table: from, order: fromOrder } });
+      snap = snapTable(to);
+      writes = commitChairs(to, model);
+      seatsAfter = model.chairs.length;
+    }
     return guarded(function () {
-      var p = Promise.resolve();
-      if (to === 0) chosen = 0;
-      else if (seatK) chosen = seatK;
-      else chosen = freeChair(to);
-      if (to && chosen == null) {
-        if (!opts.addSeat) return false;
-        seatsAfter = seatsOf(to) + 1;
-        chosen = seatsAfter;
-        p = writeSeats(to, seatsAfter);
-      }
-      return p.then(function () { return gref(id).update({ table: to, order: chosen }); });
+      if (writes) writes.forEach(applyWrite);
+      else gref(id).update({ table: to, order: chosen });
     }).then(function (ok) {
       if (!ok) return;
       log(to === 0 ? 'Took ' + name + ' off ' + placeName(from) : from === 0 ? 'Seated ' + name + ' at ' + placeName(to) : 'Moved ' + name + ' from ' + placeName(from) + ' to ' + placeName(to) + (seatsAfter ? ', adding a seat (now ' + seatsAfter + ')' : ''));
       pushUndo('move ' + name, function () {
         if (!S.guests.has(id)) return false;
-        return gref(id).update({ table: from, order: fromOrder }).then(function () {
-          if (seatsAfter === null) return;
-          var s = seatsOf(to);
-          var occupied = at(to).some(function (x) { return x.id !== id && Math.round(x.order) === s; });
-          if (!occupied) return writeSeats(to, s - 1);
-        }).then(function () {
-          log('Undo: put ' + name + ' back ' + inPlace(from));
-          return name + ' is back ' + inPlace(from) + '.';
-        });
+        gref(id).update({ table: from, order: fromOrder });
+        if (snap) restoreTable(to, snap);
+        log('Undo: put ' + name + ' back ' + inPlace(from));
+        return name + ' is back ' + inPlace(from) + '.';
       });
       flashGuest(id);
       toast(name + ' is now ' + inPlace(to) + (seatsAfter ? ', which has ' + seatsAfter + ' seats now' : '') + '.', true);
@@ -1481,67 +2042,30 @@ body.readonly .seat:hover .hl{fill:transparent}
       toast(an + ' is now ' + inPlace(B.t) + ', and ' + bn + ' is ' + inPlace(A.t) + '.', true);
     });
   }
-  function changeSeats(n, delta) {
-    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
-    var seats = seatsOf(n);
-    if (delta > 0 && seats >= 30) { toast(PlaceName(n) + ' already has 30 seats.'); return Promise.resolve(); }
-    var next = seats + delta;
-    return guarded(function () { return writeSeats(n, next); }).then(function (ok) {
-      if (!ok) return;
-      log('Added a seat at ' + placeName(n) + ' (now ' + next + ')');
-      pushUndo('add a seat at ' + placeName(n), function () {
-        var s = seatsOf(n);
-        if (at(n).some(function (x) { return Math.round(x.order) === s; })) return false;
-        return writeSeats(n, s - 1).then(function () { log('Undo: took the added seat away from ' + placeName(n)); return 'Took the extra seat away from ' + placeName(n) + '.'; });
-      });
-      toast('Added a seat at ' + placeName(n) + '. It has ' + next + ' now.', true);
-    });
-  }
-  function removeEmptySeat(n) {
-    var m = seatMap(n), k = -1;
-    for (var i = m.chairs.length - 1; i >= 0; i--) if (!m.chairs[i]) { k = i + 1; break; }
-    if (k === -1) { toast(PlaceName(n) + ' has no empty seat to remove. Move someone to another table first.'); return Promise.resolve(); }
-    return removeSeatAt(n, k);
-  }
-  function removeSeatAt(n, k) {
-    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
-    var m = seatMap(n);
-    if (m.chairs[k - 1]) { toast('Someone is sitting in that seat. Move them first.'); return Promise.resolve(); }
-    var seats = seatsOf(n);
-    var shift = at(n).filter(function (g) { return Math.round(g.order) > k; }).map(function (g) { return { id: g.id, order: g.order }; });
-    return guarded(function () {
-      return seq(shift, function (s) { return gref(s.id).update({ order: s.order - 1 }); }).then(function () { return writeSeats(n, seats - 1); });
-    }).then(function (ok) {
-      if (!ok) return;
-      log('Removed an empty seat from ' + placeName(n) + ' (now ' + (seats - 1) + ')');
-      pushUndo('remove a seat at ' + placeName(n), function () {
-        return writeSeats(n, seatsOf(n) + 1).then(function () {
-          return seq(shift, function (s) { return S.guests.has(s.id) ? gref(s.id).update({ order: s.order }) : null; });
-        }).then(function () { log('Undo: put a seat back at ' + placeName(n)); return 'Put the seat back at ' + placeName(n) + '.'; });
-      });
-      toast('Removed an empty seat from ' + placeName(n) + '. It has ' + (seats - 1) + ' now.', true);
-    });
-  }
   function addGuest(name, table, seatK) {
-    var ref = null, addedSeat = null, chosen = 0;
-    return guarded(function () {
-      ref = S.db.collection('guests').doc();
-      var p = Promise.resolve();
-      if (table > 0) {
-        chosen = seatK && !seatMap(table).chairs[seatK - 1] ? seatK : freeChair(table);
-        if (chosen == null) { addedSeat = seatsOf(table) + 1; chosen = addedSeat; p = writeSeats(table, addedSeat); }
+    var ref = S.db.collection('guests').doc(), id = ref.id, chosen = 0, writes = null, snap = null, addedSeat = null;
+    if (table > 0) {
+      chosen = seatK && !seatMap(table).chairs[seatK - 1] ? seatK : freeChair(table);
+      if (chosen == null) {
+        var model = chairModel(table), slot = defaultSlot(model);
+        model.chairs.splice(slot.j - 1, 0, { side: model.long ? slot.side : null, g: { id: id, name: name, table: 0, order: 0 } });
+        snap = snapTable(table);
+        writes = commitChairs(table, model);
+        addedSeat = model.chairs.length;
+        chosen = slot.j;
       }
-      return p.then(function () { return ref.set({ name: name, table: table, order: chosen }); });
+    }
+    return guarded(function () {
+      ref.set({ name: name, table: table, order: chosen });
+      if (writes) writes.forEach(function (w) { if (w.id !== id) applyWrite(w); });
     }).then(function (ok) {
       if (!ok) return;
-      var id = ref.id;
       log('Added ' + name + (table ? ' to ' + placeName(table) : ' to Not seated yet') + (addedSeat ? ', adding a seat (now ' + addedSeat + ')' : ''));
       pushUndo('add ' + name, function () {
-        return S.db.doc('guests/' + id).delete().then(function () {
-          if (addedSeat === null) return;
-          var s = seatsOf(table);
-          if (!at(table).some(function (x) { return x.id !== id && Math.round(x.order) === s; })) return writeSeats(table, s - 1);
-        }).then(function () { log('Undo: took ' + name + ' back off the guest list'); return name + ' is off the chart again.'; });
+        S.db.doc('guests/' + id).delete();
+        if (snap) restoreTable(table, snap);
+        log('Undo: took ' + name + ' back off the guest list');
+        return name + ' is off the chart again.';
       });
       flashGuest(id);
       toast('Added ' + name + ' ' + inPlace(table) + (addedSeat ? ' and gave the table one more seat' : '') + '.', true);
@@ -1576,8 +2100,266 @@ body.readonly .seat:hover .hl{fill:transparent}
     });
   }
 
+  /* ================= Moving, reshaping, adding and removing tables ================= */
+  function startTableMove(n) {
+    if (!canEdit()) { viewOnlyNote(); return; }
+    var M = S.lay;
+    if (!M || !M.free || !M.place[n]) return;
+    var L = M.links || {}, fixed = {};
+    M.nums.forEach(function (m) { if (L[m] === n) fixed[m] = { x: M.place[m].x, y: M.place[m].y }; });
+    S.sel = null; S.panel = null; S.arrange = null;
+    S.tmove = { n: n, isNew: false, pos: { x: M.place[n].x, y: M.place[n].y }, fixed: fixed, attach: null };
+    scheduleRender();
+    announce('Moving ' + placeName(n) + '. Drag it where it should go, then press Done.');
+  }
+  function startNewTable(kind, seats) {
+    var M = S.lay;
+    if (!M || !M.free) return;
+    var sz = stageSize(), bottom = 150;
+    var c = { x: (sz.w / 2 - view.x) / view.k, y: ((sz.h - bottom) / 2 - view.y) / view.k };
+    S.sel = null; S.panel = null; S.arrange = null;
+    S.tmove = { n: nextTableNum(), isNew: true, kind: kind, seats: seats, pos: c, fixed: {}, attach: null };
+    scheduleRender();
+    announce('Placing ' + placeName(S.tmove.n) + '. Drag it where it should go, then press Add table.');
+  }
+  function cancelTableMove() { if (!S.tmove) return; S.tmove = null; planSig = ''; scheduleRender(); }
+  function dragPaint() {
+    var tm = S.tmove;
+    if (!tm) return;
+    var tr = 'translate(' + f1(tm.pos.x) + ',' + f1(tm.pos.y) + ')';
+    document.querySelectorAll('#tblLayer .tbl[data-t="' + tm.n + '"], #seatLayer .tseats[data-t="' + tm.n + '"]').forEach(function (e) { e.setAttribute('transform', tr); });
+  }
+  /* A long table dropped close to the end of another long table gets pushed up against it */
+  function snapFor(n, pos) {
+    var P = S.meta && S.meta.room, tm = S.tmove;
+    if (!P || !tm) return null;
+    var M = freeLayout(P, n, { noResolve: true, noAttach: true });
+    var tb = M.tabs[n];
+    if (!tb || (tb.t.kind !== 'long' && tb.t.kind !== 'longh')) return null;
+    var vert = tb.t.kind === 'long', best = null, L = M.links;
+    M.nums.forEach(function (m) {
+      if (m === n) return;
+      var o = M.tabs[m];
+      if (!sameRow(o, tb)) return;
+      var p = M.place[m];
+      var after = vert ? { x: p.x, y: p.y + o.len / 2 + tb.len / 2 } : { x: p.x + o.len / 2 + tb.len / 2, y: p.y };
+      var before = vert ? { x: p.x, y: p.y - o.len / 2 - tb.len / 2 } : { x: p.x - o.len / 2 - tb.len / 2, y: p.y };
+      [['after', after], ['before', before]].forEach(function (c) {
+        var d = Math.hypot(c[1].x - pos.x, c[1].y - pos.y);
+        if (d < 40 && (!best || d < best.d)) best = { d: d, type: c[0], target: m, pos: c[1] };
+      });
+    });
+    if (best && best.type === 'before' && L[best.target] != null) best = { d: best.d, type: 'after', target: L[best.target], pos: best.pos };
+    return best;
+  }
+  function dropTable() {
+    var tm = S.tmove;
+    if (!tm) return;
+    var sn = snapFor(tm.n, tm.pos);
+    if (sn) { tm.pos = { x: sn.pos.x, y: sn.pos.y }; tm.attach = { type: sn.type, target: sn.target }; }
+    else tm.attach = null;
+    scheduleRender();
+  }
+  function renderTableBar() {
+    var bar = $('#tmbar'), tm = S.tmove;
+    if (tm && !tm.isNew && !S.tables.has(tm.n)) { S.tmove = null; tm = null; }
+    if (!tm) { if (!bar.hidden) { bar.hidden = true; setMbH(); } return; }
+    var was = bar.hidden;
+    bar.hidden = false;
+    $('#tm-title').textContent = (tm.isNew ? 'Placing ' : 'Moving ') + placeName(tm.n);
+    var hint = fineMQ.matches ? 'Drag the table where it should go, or click the spot. Then press ' + (tm.isNew ? 'Add table.' : 'Done.') : 'Drag the table, or tap the spot where it should go. Then press ' + (tm.isNew ? 'Add table.' : 'Done.');
+    if (tm.attach) hint = 'It will be pushed up against ' + placeName(tm.attach.target) + '. Press ' + (tm.isNew ? 'Add table' : 'Done') + ' to keep it there.';
+    if ($('#tm-hint').textContent !== hint) $('#tm-hint').textContent = hint;
+    $('#tm-done').textContent = tm.isNew ? 'Add table' : 'Done';
+    setMbH();
+    if (was) setTimeout(setMbH, 60);
+  }
+  $('#tm-cancel').addEventListener('click', cancelTableMove);
+  $('#tm-done').addEventListener('click', function () { doneTableMove(); });
+
+  function tableUndoData(t) { return { kind: t.kind, end: t.end == null ? null : t.end, link: t.link == null ? null : t.link, x: t.x == null ? null : t.x, y: t.y == null ? null : t.y, sides: t.sides == null ? null : t.sides }; }
+  /* Every table whose row or spot changed, as saved updates (and how to put them back) */
+  function diffTables(M, skip) {
+    var out = [];
+    M.nums.forEach(function (m) {
+      if (m === skip) return;
+      var t = tinfo(m);
+      if (!t) return;
+      var want = M.links[m] != null ? M.links[m] : null, cur = t.link != null ? t.link : null, p = M.place[m], d = {};
+      if (want !== cur) d.link = want;
+      if (want == null && (t.x == null || t.y == null || Math.abs(t.x - p.x) > 0.5 || Math.abs(t.y - p.y) > 0.5)) { d.x = r1(p.x); d.y = r1(p.y); }
+      if (Object.keys(d).length) out.push({ n: m, d: d, prev: tableUndoData(t) });
+    });
+    return out;
+  }
+  function doneTableMove() {
+    var tm = S.tmove;
+    if (!tm) return;
+    if (!canEdit()) { viewOnlyNote(); return; }
+    planSig = '';
+    renderPlan();
+    var M = S.lay;
+    if (!M || !M.free || !M.place[tm.n]) { S.tmove = null; scheduleRender(); return; }
+    var n = tm.n, isNew = tm.isNew, pn = M.place[n], attach = tm.attach;
+    var writes = diffTables(M, isNew ? n : null);
+    if (!isNew && !writes.some(function (w) { return w.n === n; })) { S.tmove = null; scheduleRender(); toast(PlaceName(n) + ' stayed where it was.'); return; }
+    var newDoc = isNew ? { num: n, seats: tm.seats, kind: tm.kind, end: null, link: M.links[n] != null ? M.links[n] : null, x: r1(pn.x), y: r1(pn.y) } : null;
+    var near = attach ? ' next to ' + placeName(attach.target) : '';
+    return guarded(function () {
+      S.tmove = null;
+      if (newDoc) S.db.doc('tables/' + tid(n)).set(newDoc);
+      writes.forEach(function (w) { S.db.doc('tables/' + tid(w.n)).update(w.d); });
+    }).then(function (ok) {
+      scheduleRender();
+      if (!ok) return;
+      if (newDoc) {
+        log('Added ' + placeName(n) + ', ' + kindPhrase(newDoc.kind) + ' with ' + newDoc.seats + ' seats' + near);
+        pushUndo('add ' + placeName(n), function () {
+          if (!S.tables.has(n) || at(n).length) return false;
+          S.db.doc('tables/' + tid(n)).delete();
+          writes.forEach(function (w) { if (S.tables.has(w.n)) S.db.doc('tables/' + tid(w.n)).update(w.prev); });
+          log('Undo: took ' + placeName(n) + ' away');
+          return PlaceName(n) + ' is gone again.';
+        });
+        toast('Added ' + placeName(n) + '. Tap it to add guests.', true);
+      } else {
+        log('Moved ' + placeName(n) + near);
+        pushUndo('move ' + placeName(n), function () {
+          writes.forEach(function (w) { if (S.tables.has(w.n)) S.db.doc('tables/' + tid(w.n)).update(w.prev); });
+          log('Undo: put ' + placeName(n) + ' back where it was');
+          return PlaceName(n) + ' is back where it was.';
+        });
+        toast('Moved ' + placeName(n) + near + '.', true);
+      }
+    });
+  }
+  /* When a table leaves a row, the table right after it closes the gap (or, with split, stays put and starts its own row) */
+  function closeRow(n, M, upd, split) {
+    var L = M.links || {}, up = L[n] != null ? L[n] : null;
+    M.nums.forEach(function (m) {
+      if (m === n || L[m] !== n) return;
+      upd[m] = up != null && !split ? { link: up } : { link: null, x: r1(M.place[m].x), y: r1(M.place[m].y) };
+    });
+  }
+  function changeShape(n, kind) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
+    var t = tinfo(n), M = S.lay;
+    if (!t || !M || !M.free || !M.place[n]) return Promise.resolve();
+    var from = kindOf(n);
+    if (from === kind) return Promise.resolve();
+    var upd = {};
+    upd[n] = { kind: kind, end: null, link: null, sides: null, x: r1(M.place[n].x), y: r1(M.place[n].y) };
+    closeRow(n, M, upd, true);
+    var sim = simulate(upd, n);
+    if (sim) sim.nums.forEach(function (m) {
+      if (m === n || sim.links[m] != null) return;
+      var tt = sim.tables.get(m), p = sim.place[m];
+      if (tt && (tt.x == null || tt.y == null || Math.abs(tt.x - p.x) > 0.5 || Math.abs(tt.y - p.y) > 0.5)) upd[m] = Object.assign({}, upd[m] || {}, { x: r1(p.x), y: r1(p.y) });
+    });
+    var prev = {};
+    Object.keys(upd).forEach(function (k) { var tt = tinfo(+k); if (tt) prev[k] = tableUndoData(tt); });
+    return guarded(function () {
+      Object.keys(upd).forEach(function (k) { S.db.doc('tables/' + tid(+k)).update(upd[k]); });
+    }).then(function (ok) {
+      if (!ok) return;
+      log('Changed ' + placeName(n) + ' to ' + kindPhrase(kind));
+      pushUndo('change the shape of ' + placeName(n), function () {
+        Object.keys(prev).forEach(function (k) { if (S.tables.has(+k)) S.db.doc('tables/' + tid(+k)).update(prev[k]); });
+        log('Undo: changed ' + placeName(n) + ' back to ' + kindPhrase(from));
+        return PlaceName(n) + ' is ' + kindPhrase(from) + ' again.';
+      });
+      toast(PlaceName(n) + ' is now ' + kindPhrase(kind) + '.', true);
+    });
+  }
+  function removeTable(n) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
+    var t = tinfo(n), M = S.lay;
+    if (!t) return Promise.resolve();
+    if (at(n).length) { toast('Move everyone off ' + placeName(n) + ' first. Then you can remove it.'); return Promise.resolve(); }
+    var upd = {}, prev = {};
+    if (M && M.free) closeRow(n, M, upd, false);
+    Object.keys(upd).forEach(function (k) { var tt = tinfo(+k); if (tt) prev[k] = tableUndoData(tt); });
+    var doc = { num: n, seats: t.seats, kind: kindOf(n), end: t.end == null ? null : t.end, link: t.link == null ? null : t.link, x: t.x, y: t.y, sides: t.sides == null ? null : t.sides };
+    if (M && M.place[n]) { doc.x = r1(M.place[n].x); doc.y = r1(M.place[n].y); }
+    var name = placeName(n);
+    return guarded(function () {
+      Object.keys(upd).forEach(function (k) { S.db.doc('tables/' + tid(+k)).update(upd[k]); });
+      S.db.doc('tables/' + tid(n)).delete();
+    }).then(function (ok) {
+      if (!ok) return;
+      closePanel();
+      log('Removed ' + name);
+      pushUndo('remove ' + name, function () {
+        if (S.tables.has(n)) return false;
+        S.db.doc('tables/' + tid(n)).set(doc);
+        Object.keys(prev).forEach(function (k) { if (S.tables.has(+k)) S.db.doc('tables/' + tid(+k)).update(prev[k]); });
+        log('Undo: put ' + name + ' back');
+        return name.charAt(0).toUpperCase() + name.slice(1) + ' is back.';
+      });
+      toast('Removed ' + name + '.', true);
+    });
+  }
+  function openConfirmTable(n) {
+    S.confirmFn = function () { removeTable(n); };
+    $('#cf-title').textContent = 'Remove ' + placeName(n) + '?';
+    $('#cf-body').textContent = 'Nobody is sitting there. If it was a mistake, press Undo right after.';
+    $('#cf-keep').textContent = 'Keep it';
+    $('#cf-ok').textContent = 'Remove table';
+    openDialog($('#dlg-confirm'));
+  }
+  function openShape(n) {
+    if (!canEdit()) { viewOnlyNote(); return; }
+    S.shapeFor = n;
+    var cur = kindOf(n);
+    $('#shape-title').textContent = 'Change the shape of ' + placeName(n);
+    $('#shape-list').innerHTML = KIND_PICK.map(function (o) {
+      return '<button type="button" class="shape-opt" data-kind="' + o.kind + '" aria-pressed="' + (o.kind === cur) + '">' + shapeIcon(o.kind) +
+        '<span class="t"><b>' + esc(o.label) + '</b><span>' + (o.kind === cur ? 'The shape it has now' : esc(o.note)) + '</span></span></button>';
+    }).join('');
+    openDialog($('#dlg-shape'));
+  }
+  $('#shape-list').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-kind]');
+    if (!b) return;
+    var n = S.shapeFor;
+    closeDialog($('#dlg-shape'));
+    if (n) changeShape(n, b.dataset.kind);
+  });
+  var atCtx = { kind: 'round' };
+  function openAddTable() {
+    if (!canEdit()) { viewOnlyNote(); return; }
+    if (!S.lay || !S.lay.free) { toast('Tables can be added once the chart finishes loading.'); return; }
+    var n = nextTableNum();
+    if (n > 99) { toast('The chart already has as many tables as it can hold.'); return; }
+    closePanel(); endMove();
+    atCtx.kind = 'round';
+    $('#at-title').textContent = 'Add Table ' + n;
+    renderAtShapes();
+    renderAtSeats(true);
+    openDialog($('#dlg-addtable'));
+  }
+  function renderAtShapes() {
+    $('#at-shapes').innerHTML = KIND_PICK.filter(function (o) { return o.kind !== 'sweet'; }).map(function (o) {
+      return '<button type="button" class="shape-opt" data-kind="' + o.kind + '" aria-pressed="' + (o.kind === atCtx.kind) + '">' + shapeIcon(o.kind) +
+        '<span class="t"><b>' + esc(o.label) + '</b><span>' + esc(o.note) + '</span></span></button>';
+    }).join('');
+  }
+  function renderAtSeats(reset) {
+    var sel = $('#at-seats'), cur = reset ? KIND_SEATS[atCtx.kind] : (+sel.value || KIND_SEATS[atCtx.kind]), h = '';
+    for (var i = 1; i <= 16; i++) h += '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + i + (i === 1 ? ' seat' : ' seats') + '</option>';
+    sel.innerHTML = h;
+  }
+  $('#at-shapes').addEventListener('click', function (e) { var b = e.target.closest('[data-kind]'); if (!b) return; atCtx.kind = b.dataset.kind; renderAtShapes(); renderAtSeats(true); });
+  $('#at-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var seats = +$('#at-seats').value || KIND_SEATS[atCtx.kind];
+    closeDialog($('#dlg-addtable'));
+    startNewTable(atCtx.kind, seats);
+  });
+
   /* ================= Moving people ================= */
   function startMove(id) {
+    if (S.tmove || S.arrange) return;
     if (!canEdit()) { viewOnlyNote(); return; }
     var g = S.guests.get(id);
     if (!g) return;
@@ -1609,7 +2391,7 @@ body.readonly .seat:hover .hl{fill:transparent}
     $('#add-warn').hidden = true;
     $('#add-submit').textContent = 'Add guest';
     var opts = '<option value="0">Not seated yet</option>';
-    TABLES.forEach(function (n) { var o = openCount(n); opts += '<option value="' + n + '">' + PlaceName(n) + ' · ' + (o > 0 ? o + ' open' : 'full, adds a seat') + '</option>'; });
+    tableNums().forEach(function (n) { var o = openCount(n); opts += '<option value="' + n + '">' + PlaceName(n) + ' · ' + (o > 0 ? o + ' open' : 'full, adds a seat') + '</option>'; });
     $('#add-table').innerHTML = opts;
     $('#add-table').value = String(table || 0);
     openDialog($('#dlg-add'));
@@ -1640,7 +2422,9 @@ body.readonly .seat:hover .hl{fill:transparent}
   function openConfirm(id) {
     var g = S.guests.get(id);
     if (!g) return;
-    S.confirmId = id;
+    S.confirmFn = function () { endMove(); deleteGuest(id); };
+    $('#cf-keep').textContent = 'Keep them';
+    $('#cf-ok').textContent = 'Remove';
     $('#cf-title').textContent = 'Remove ' + g.name + ' from the guest list?';
     $('#cf-body').textContent = 'This takes ' + g.name + ' off the chart completely. If it was a mistake, press Undo right after.';
     openDialog($('#dlg-confirm'));
@@ -1669,7 +2453,7 @@ body.readonly .seat:hover .hl{fill:transparent}
   });
   $('#full-add').addEventListener('click', function () { var c = S.fullCtx; closeDialog($('#dlg-full')); if (!c) return; endMove(); moveGuest(c.id, c.n, null, { addSeat: true }); });
   $('#full-swaps').addEventListener('click', function (e) { var b = e.target.closest('[data-swap]'); if (!b) return; var c = S.fullCtx; closeDialog($('#dlg-full')); if (!c) return; endMove(); swapGuests(c.id, b.dataset.swap); });
-  $('#cf-ok').addEventListener('click', function () { var id = S.confirmId; closeDialog($('#dlg-confirm')); endMove(); if (id) deleteGuest(id); });
+  $('#cf-ok').addEventListener('click', function () { var fn = S.confirmFn; S.confirmFn = null; closeDialog($('#dlg-confirm')); if (fn) fn(); });
 
   /* ================= Toolbar, move bar, drawer ================= */
   $('#mb-cancel').addEventListener('click', endMove);
@@ -1678,7 +2462,11 @@ body.readonly .seat:hover .hl{fill:transparent}
   $('#mb-delete').addEventListener('click', function () { if (S.sel) openConfirm(S.sel); });
   $('#mb-grid').addEventListener('click', function (e) { var b = e.target.closest('[data-to]'); if (b && S.sel) requestMove(S.sel, +b.dataset.to, null); });
   $('#btn-undo').addEventListener('click', undo);
-  $('#btn-add').addEventListener('click', function () { openAdd(0, null); });
+  var narrowMQ = window.matchMedia('(max-width: 640px)');
+  $('#btn-add').addEventListener('click', function () { if (narrowMQ.matches) openDialog($('#dlg-addwhat')); else openAdd(0, null); });
+  $('#btn-addtable').addEventListener('click', function () { openAddTable(); });
+  $('#aw-guest').addEventListener('click', function () { closeDialog($('#dlg-addwhat')); openAdd(0, null); });
+  $('#aw-table').addEventListener('click', function () { closeDialog($('#dlg-addwhat')); openAddTable(); });
   var drawerOpener = null;
   function toggleDrawer(open) {
     $('#drawer').hidden = !open;
@@ -1764,6 +2552,13 @@ body.readonly .seat:hover .hl{fill:transparent}
   document.addEventListener('keydown', function (e) {
     var t = e.target instanceof Element ? e.target : null;
     var typing = t && t.closest('input, textarea, select');
+    if (S.tmove && !typing && !document.querySelector('dialog[open]')) {
+      var stp = e.shiftKey ? 32 : 8, nudge = { ArrowLeft: [-stp, 0], ArrowRight: [stp, 0], ArrowUp: [0, -stp], ArrowDown: [0, stp] }[e.key];
+      if (nudge) { e.preventDefault(); var cp = S.tmove.attach && S.lay && S.lay.place[S.tmove.n] ? S.lay.place[S.tmove.n] : S.tmove.pos; S.tmove.pos = { x: cp.x + nudge[0], y: cp.y + nudge[1] }; S.tmove.attach = null; scheduleRender(); return; }
+      if (e.key === 'Enter') { e.preventDefault(); doneTableMove(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); cancelTableMove(); return; }
+    }
+    if (S.arrange && !typing && !document.querySelector('dialog[open]') && e.key === 'Escape') { e.preventDefault(); if (S.arrange.pick) { S.arrange.pick = null; scheduleRender(); } else endArrange(); return; }
     if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z' && !typing) { if (document.querySelector('dialog[open]')) return; e.preventDefault(); undo(); return; }
     if (!typing && !document.querySelector('dialog[open]')) {
       if (e.key === '+' || e.key === '=') { zoomCenter(1.4); return; }
@@ -1780,7 +2575,7 @@ body.readonly .seat:hover .hl{fill:transparent}
   /* ================= Spreadsheet download ================= */
   function buildCSV() {
     derive();
-    var cols = TABLES.map(function (n) { var m = seatMap(n); return { head: n === 29 ? 'Table 29 (sweetheart)' : 'Table ' + n, cells: m.chairs.map(function (g) { return g ? g.name : '(open seat)'; }).concat(m.over.map(function (g) { return g.name + ' (no chair)'; })) }; });
+    var cols = tableNums().map(function (n) { var m = seatMap(n); return { head: isSweet(n) ? 'Table ' + n + ' (sweetheart)' : 'Table ' + n, cells: m.chairs.map(function (g) { return g ? g.name : '(open seat)'; }).concat(m.over.map(function (g) { return g.name + ' (no chair)'; })) }; });
     var uns = at(0);
     if (uns.length) cols.push({ head: 'Not seated yet', cells: uns.map(function (g) { return g.name; }) });
     var rows = 0;
@@ -1821,7 +2616,13 @@ body.readonly .seat:hover .hl{fill:transparent}
       var m = new Map();
       snap.docs.forEach(function (d) {
         var v = d.data() || {}, num = Number(v.num);
-        if (Number.isInteger(num) && num >= 1 && num <= 29) m.set(num, { id: d.id, num: num, seats: Math.max(0, Math.min(30, Math.floor(Number(v.seats) || 0))) });
+        if (!(Number.isInteger(num) && num >= 1 && num <= 99)) return;
+        var kind = KIND_SEATS.hasOwnProperty(v.kind) ? v.kind : (T[num] ? T[num].kind : 'round');
+        var fx = typeof v.x === 'number' && isFinite(v.x) ? v.x : null, fy = typeof v.y === 'number' && isFinite(v.y) ? v.y : null;
+        var link = Number.isInteger(v.link) && v.link !== num ? v.link : null;
+        var end = ['top', 'bottom', 'left', 'right'].indexOf(v.end) !== -1 ? v.end : null;
+        var sides = v.sides && typeof v.sides === 'object' && !Array.isArray(v.sides) ? v.sides : null;
+        m.set(num, { id: d.id, num: num, seats: Math.max(0, Math.min(30, Math.floor(Number(v.seats) || 0))), kind: kind, end: end, link: link, x: fx, y: fy, sides: sides });
       });
       S.tables = m;
       markLoaded('loadedT', snap);
@@ -1833,7 +2634,7 @@ body.readonly .seat:hover .hl{fill:transparent}
         var v = d.data() || {};
         if (typeof v.name !== 'string' || !v.name.trim()) return;
         var tb = Number(v.table);
-        m.set(d.id, { id: d.id, name: v.name.trim().slice(0, 120), table: Number.isInteger(tb) && tb >= 0 && tb <= 29 ? tb : 0, order: Number(v.order) || 0 });
+        m.set(d.id, { id: d.id, name: v.name.trim().slice(0, 120), table: Number.isInteger(tb) && tb >= 0 && tb <= 99 ? tb : 0, order: Number(v.order) || 0 });
       });
       S.guests = m;
       if (S.sel && !m.has(S.sel)) S.sel = null;
@@ -1966,7 +2767,7 @@ body.readonly .seat:hover .hl{fill:transparent}
     function replaceAll(s) {
       s = s || {};
       var t = new Map(), g = new Map(), ch = new Map();
-      (s.tables || []).forEach(function (r) { t.set(String(r.id), { num: r.num, seats: r.seats }); });
+      (s.tables || []).forEach(function (r) { t.set(String(r.id), { num: r.num, seats: r.seats, kind: r.kind, end: r.end == null ? null : r.end, link: r.link == null ? null : r.link, x: r.x == null ? null : r.x, y: r.y == null ? null : r.y, sides: r.sides == null ? null : r.sides }); });
       (s.guests || []).forEach(function (r) { g.set(String(r.id), { name: r.name, table: r.table, order: r.order }); });
       (s.changes || []).forEach(function (r) { ch.set('c' + r.id, { at: Number(r.at) || 0, by: r.by || null, dev: r.dev || null, text: r.text || '' }); });
       cols.tables = t; cols.guests = g; cols.changes = ch;
