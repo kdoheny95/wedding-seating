@@ -84,7 +84,7 @@ button:disabled{cursor:default}
 
 /* Stage and sheet */
 .stage{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--desk)}
-#svg{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+#svg{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab}
 #svg.panning{cursor:grabbing}
 .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-2);font-size:15px;pointer-events:none}
 
@@ -268,6 +268,18 @@ body.picking .slot .sc{fill:var(--open-wash);stroke-width:2.6}
 .seat.picked .n1,.seat.picked .n2,.seat.picked .no{fill:#fff}
 body.arranging #tblLayer .tbl:not(.arr),body.arranging #seatLayer .tseats:not(.arr){opacity:.4}
 body.arranging .seat{cursor:pointer}
+body:not(.readonly):not(.tmoving) #seatLayer .seat.guest,body:not(.readonly):not(.tmoving) #seatLayer .seat.over,body:not(.readonly):not(.tmoving) #seatLayer .seat.open{cursor:grab}
+body.gdragging,body.gdragging #svg,body.gdragging #seatLayer .seat{cursor:grabbing}
+.seat.dragsrc{opacity:.3}
+.seat.drop .hl{fill:#2b6fe0}
+.seat.drop .n1,.seat.drop .n2,.seat.drop .no{fill:#fff}
+.seat.drop .chair{fill:#2b6fe0;stroke:#2b6fe0;stroke-dasharray:none}
+.tbl.drop .tshape{stroke:#2b6fe0;stroke-width:4}
+.slot.drop .sc{fill:#2b6fe0;stroke:#2b6fe0}
+.slot.drop .sp{stroke:#fff}
+#dragLayer{pointer-events:none}
+.dragghost{position:fixed;left:0;top:0;z-index:70;pointer-events:none;display:flex;flex-direction:column;gap:2px;max-width:min(320px,calc(100vw - 16px));padding:7px 12px;border-radius:10px;background:var(--ui);color:#fff;box-shadow:0 10px 28px rgba(20,25,35,.35);font-size:14px;font-weight:650;line-height:1.25;will-change:transform}
+.dragghost .dg-sub{font-size:12.5px;font-weight:500;opacity:.9}
 .zoom,.stats{bottom:calc(12px + var(--mb-h,0px))}
 .loading.gate{padding:24px;pointer-events:auto}
 .gate-card{display:grid;gap:8px;max-width:430px;padding:22px 24px;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:0 6px 22px rgba(20,25,35,.14);font-size:15px;line-height:1.45;color:var(--ink-2);text-align:center}
@@ -298,15 +310,16 @@ body.arranging .seat{cursor:pointer}
       <defs>
         <radialGradient id="treeFill" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#e9f1ec"/><stop offset=".55" stop-color="#b9cfc3"/><stop offset="1" stop-color="#7f9d8e"/></radialGradient>
       </defs>
-      <g id="world"><g id="sheet"></g><g id="room"></g><g id="tblLayer"></g><g id="seatLayer"></g></g>
+      <g id="world"><g id="sheet"></g><g id="room"></g><g id="tblLayer"></g><g id="seatLayer"></g><g id="dragLayer"></g></g>
     </svg>
     <div class="loading" id="loading">Loading the floor plan&hellip;</div>
 
     <div class="float card hint" id="hint" hidden>
       <strong>How this works</strong>
       <ul>
-        <li>Drag to move around. Pinch, scroll, or use + and &minus; to zoom.</li>
-        <li class="edit">Tap a name, then tap the table where they should sit.</li>
+        <li>Drag an empty spot to move around. Pinch, scroll, or use + and &minus; to zoom.</li>
+        <li class="edit">Drag a name onto another seat, a table, or a + between chairs. On a phone, press and hold the name first.</li>
+        <li class="edit">Or tap a name, then tap the table where they should sit.</li>
         <li class="edit">Tap a table to add or remove seats, move it or change its shape. Tap a green open seat to add someone.</li>
         <li class="edit">Made a mistake? Press Undo at the top.</li>
       </ul>
@@ -1327,6 +1340,7 @@ body.arranging .seat{cursor:pointer}
     if (!S.userView) fitView(false);
     S.fitted = true;
     renderMarks();
+    if (S.drag) dragAfterRender();
   }
   function renderMarks() {
     var selG = S.sel ? S.guests.get(S.sel) : null;
@@ -1590,8 +1604,18 @@ body.arranging .seat{cursor:pointer}
     if (tdt && +tdt.getAttribute('data-t') === S.tmove.n) {
       var cur0 = S.tmove.attach && S.lay && S.lay.place[S.tmove.n] ? S.lay.place[S.tmove.n] : S.tmove.pos;
       gesture = { type: 'tdrag', start: p, orig: { x: cur0.x, y: cur0.y }, moved: false };
-    } else if (pointers.size === 1) gesture = { type: 'tap', start: p, view: { k: view.k, x: view.x, y: view.y }, target: e.target, moved: false };
+    } else if (pointers.size === 1) {
+      gesture = { type: 'tap', start: p, view: { k: view.k, x: view.x, y: view.y }, target: e.target, moved: false, ptype: e.pointerType || 'mouse', cx: e.clientX, cy: e.clientY };
+      var cand = dragCandidate(e.target);
+      if (cand) {
+        var gg = gesture;
+        gg.cand = cand;
+        if (gg.ptype !== 'mouse') gg.hold = setTimeout(function () { if (gesture === gg && gg.type === 'tap') startGDrag(gg); }, DRAG_HOLD);
+      }
+    }
     else if (pointers.size === 2) {
+      if (gesture && gesture.hold) clearTimeout(gesture.hold);
+      if (gesture && gesture.type === 'gdrag') endGDrag();
       var pts = Array.from(pointers.values());
       gesture = { type: 'pinch', d0: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), m0: { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }, view: { k: view.k, x: view.x, y: view.y } };
     }
@@ -1605,6 +1629,12 @@ body.arranging .seat{cursor:pointer}
     var p = rel(e);
     pointers.set(e.pointerId, p);
     if (!gesture) return;
+    if (gesture.type === 'gdrag') {
+      gesture.cx = e.clientX; gesture.cy = e.clientY;
+      if (Math.hypot(p.x - gesture.start.x, p.y - gesture.start.y) > 10) gesture.far = true;
+      moveGDrag();
+      return;
+    }
     if (gesture.type === 'tdrag') {
       var ddx = p.x - gesture.start.x, ddy = p.y - gesture.start.y;
       if (!gesture.moved && Math.hypot(ddx, ddy) > 4) { gesture.moved = true; if (S.tmove) S.tmove.attach = null; }
@@ -1623,7 +1653,9 @@ body.arranging .seat{cursor:pointer}
     }
     if (gesture.type === 'tap' || gesture.type === 'pan') {
       var dx = p.x - gesture.start.x, dy = p.y - gesture.start.y;
-      if (gesture.type === 'tap' && Math.hypot(dx, dy) > 6) { gesture.type = 'pan'; S.userView = true; svg.classList.add('panning'); }
+      gesture.cx = e.clientX; gesture.cy = e.clientY;
+      if (gesture.type === 'tap' && gesture.cand && gesture.ptype === 'mouse' && Math.hypot(dx, dy) > 5) { startGDrag(gesture); if (gesture.type === 'gdrag') { gesture.far = true; moveGDrag(); return; } }
+      if (gesture.type === 'tap' && Math.hypot(dx, dy) > 6) { clearTimeout(gesture.hold); gesture.type = 'pan'; S.userView = true; svg.classList.add('panning'); }
       if (gesture.type === 'pan') { view = { k: gesture.view.k, x: gesture.view.x + dx, y: gesture.view.y + dy }; applyView(); }
     }
   });
@@ -1631,6 +1663,18 @@ body.arranging .seat{cursor:pointer}
     if (!pointers.has(e.pointerId)) return;
     pointers.delete(e.pointerId);
     try { svg.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (gesture && gesture.hold) clearTimeout(gesture.hold);
+    if (gesture && gesture.type === 'gdrag') {
+      if (pointers.size === 0) {
+        var gd = gesture;
+        gesture = null;
+        svg.classList.remove('panning');
+        if (e.type !== 'pointerup') endGDrag();
+        else if (!gd.far) { endGDrag(); lastTap = { t: performance.now(), x: gd.start.x, y: gd.start.y }; onPlanTap(gd.target, gd.start); }
+        else dropGDrag();
+      }
+      return;
+    }
     if (gesture && gesture.type === 'tdrag') {
       if (pointers.size === 0) { var g0 = gesture; gesture = null; if (g0.moved) dropTable(); }
       return;
@@ -1649,6 +1693,200 @@ body.arranging .seat{cursor:pointer}
   }
   svg.addEventListener('pointerup', endPointer);
   svg.addEventListener('pointercancel', endPointer);
+  svg.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* ================= Drag and drop =================
+     Mouse: press on a name or an open chair and drag it. Touch: press and hold, then drag.
+     Drop on a person to swap, on an open seat to sit there, on a + to put the chair there,
+     or on a table to take its first open seat. */
+  var DRAG_HOLD = 300, dragGhost = null, dragRaf = 0;
+  function dragCandidate(target) {
+    if (!(target instanceof Element) || S.tmove || !canEdit()) return null;
+    var seat = target.closest('#seatLayer .seat');
+    if (!seat) return null;
+    var n = +seat.getAttribute('data-t'), k = +seat.getAttribute('data-k'), gid = seat.getAttribute('data-gid');
+    if (gid && S.guests.has(gid)) return { kind: 'guest', gid: gid, t: n, k: k };
+    if (seat.classList.contains('open') && k <= seatsOf(n)) return { kind: 'chair', gid: null, t: n, k: k };
+    return null;
+  }
+  function firstName(name) { return String(name || '').split(' ')[0] || name; }
+  function srcSeatEl() {
+    var d = S.drag;
+    if (!d) return null;
+    return d.gid ? seatEls.get(d.gid) || null : document.querySelector('#seatLayer .seat[data-t="' + d.t + '"][data-k="' + d.k + '"]');
+  }
+  function startGDrag(g) {
+    clearTimeout(g.hold);
+    var c = g.cand;
+    if (!c || !canEdit() || S.tmove) return;
+    var gu = c.gid ? S.guests.get(c.gid) : null;
+    if (c.gid && !gu) return;
+    g.type = 'gdrag';
+    S.drag = { kind: c.kind, gid: c.gid, t: gu ? gu.table : c.t, k: gu ? gu.order : c.k, key: null, act: null, overEl: null, slotsT: null, slots: [], touch: g.ptype !== 'mouse' };
+    if (S.sel) S.sel = null;
+    if (S.panel) S.panel = null;
+    if (S.arrange) S.arrange.pick = null;
+    S.resOpen = false;
+    try { if (S.drag.touch && navigator.vibrate) navigator.vibrate(12); } catch (err) {}
+    dragGhost = document.createElement('div');
+    dragGhost.className = 'dragghost';
+    dragGhost.setAttribute('aria-hidden', 'true');
+    var a = document.createElement('span'), b = document.createElement('span');
+    a.className = 'dg-name'; b.className = 'dg-sub';
+    a.textContent = gu ? gu.name : 'Open seat';
+    dragGhost.append(a, b);
+    document.body.appendChild(dragGhost);
+    document.body.classList.add('gdragging');
+    var se = srcSeatEl();
+    if (se) se.classList.add('dragsrc');
+    scheduleRender();
+    moveGDrag();
+    dragLoop();
+  }
+  function endGDrag() {
+    var d = S.drag;
+    cancelAnimationFrame(dragRaf);
+    if (!d) return;
+    if (d.overEl) d.overEl.classList.remove('drop');
+    var se = srcSeatEl();
+    if (se) se.classList.remove('dragsrc');
+    document.querySelectorAll('#seatLayer .drop, #tblLayer .drop').forEach(function (e) { e.classList.remove('drop'); });
+    $('#dragLayer').innerHTML = '';
+    if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+    document.body.classList.remove('gdragging');
+    S.drag = null;
+  }
+  function dropGDrag() {
+    var d = S.drag, act = d && d.act;
+    endGDrag();
+    if (act && act.ok && act.run) act.run();
+  }
+  /* The + marks of the table under the pointer, so a chair can go into any gap */
+  function drawDragSlots(n) {
+    var d = S.drag, layer = $('#dragLayer'), M = S.lay;
+    d.slotsT = n;
+    d.slots = [];
+    if (n == null || !M || !M.tabs[n]) { layer.innerHTML = ''; return; }
+    var p = M.place[n], skipK = null, skipSide = null;
+    if (d.t === n && d.k <= seatsOf(n)) { skipK = d.k; var cm = chairModel(n).chairs[d.k - 1]; skipSide = cm ? cm.side : null; }
+    var h = '<g transform="translate(' + f1(p.x) + ',' + f1(p.y) + ')">';
+    var cyc = M.tabs[n].t.kind === 'round' || M.tabs[n].t.kind === 'round72', capN = seatsOf(n);
+    slotsFor(M, n).forEach(function (sl) {
+      if (skipK && (sl.j === skipK || sl.j === skipK + 1 || (cyc && skipK === 1 && sl.j === capN + 1)) && (!sl.side || sl.side === skipSide)) return;
+      d.slots.push({ t: n, j: sl.j, side: sl.side || null, wx: p.x + sl.x, wy: p.y + sl.y });
+      h += '<g class="slot" data-t="' + n + '" data-j="' + sl.j + '" data-side="' + (sl.side || '') + '" transform="translate(' + f1(sl.x) + ',' + f1(sl.y) + ')"><circle class="sc" r="8"/><path class="sp" d="M-3.8 0H3.8M0 -3.8V3.8"/></g>';
+    });
+    layer.innerHTML = h + '</g>';
+    var els = layer.querySelectorAll('.slot');
+    d.slots.forEach(function (s, i) { s.el = els[i]; });
+  }
+  function dragTargetAt(x, y) {
+    var d = S.drag, el = document.elementFromPoint(x, y), inSvg = el instanceof Element && !!el.closest('#svg');
+    var arrSlot = inSvg ? el.closest('#seatLayer .slot') : null, seat = inSvg ? el.closest('#seatLayer .seat') : null;
+    if (arrSlot) return { type: 'slot', t: +arrSlot.getAttribute('data-t'), j: +arrSlot.getAttribute('data-j'), side: arrSlot.getAttribute('data-side') || null, el: arrSlot };
+    function seatT() { return { type: 'seat', t: +seat.getAttribute('data-t'), k: +seat.getAttribute('data-k'), gid: seat.getAttribute('data-gid'), open: seat.classList.contains('open'), el: seat }; }
+    /* a name or chair right under the pointer wins; otherwise the nearest + of that table */
+    if (seat && d.kind !== 'chair') return seatT();
+    /* the table number means "any open seat at this table" */
+    var tblEl = inSvg ? el.closest('#tblLayer .tbl') : null, num = tblEl && d.kind !== 'chair' ? tblEl.querySelector('.tnum') : null;
+    if (num) { var nr = num.getBoundingClientRect(); if (x >= nr.left - 5 && x <= nr.right + 5 && y >= nr.top - 5 && y <= nr.bottom + 5) return { type: 'table', t: +tblEl.getAttribute('data-t'), el: tblEl }; }
+    var r = svg.getBoundingClientRect(), best = null, R = Math.max(9, 11 * view.k);
+    d.slots.forEach(function (s) {
+      var sx = r.left + view.x + s.wx * view.k, sy = r.top + view.y + s.wy * view.k, dd = Math.hypot(sx - x, sy - y);
+      if (dd <= R && (!best || dd < best.dd)) best = { dd: dd, s: s };
+    });
+    if (best) return { type: 'slot', t: best.s.t, j: best.s.j, side: best.s.side, el: best.s.el };
+    if (seat) return seatT();
+    if (tblEl) return { type: 'table', t: +tblEl.getAttribute('data-t'), el: tblEl };
+    return null;
+  }
+  function dragAction(tg) {
+    var d = S.drag, g = d.gid ? S.guests.get(d.gid) : null;
+    var idle = { ok: false, text: d.kind === 'chair' ? 'Drop it on a + at ' + placeName(d.t) : 'Drop on a seat, a table or a +' };
+    if (!tg) return idle;
+    if (d.kind === 'chair') {
+      if (tg.type === 'slot' && tg.t === d.t) return { ok: true, text: 'Move this open seat here', run: function () { return moveChair(d.t, d.k, { j: tg.j, side: tg.side }); } };
+      return idle;
+    }
+    if (!g) return idle;
+    var slot = tg.type === 'slot' ? { j: tg.j, side: tg.side } : null;
+    if (slot && tg.t === g.table && g.order <= seatsOf(g.table)) return { ok: true, text: 'Move ' + firstName(g.name) + '’s seat here', run: function () { return moveChair(g.table, g.order, slot); } };
+    if (slot) return { ok: true, text: 'Add a seat here ' + (tg.t === g.table ? '' : 'at ' + placeName(tg.t)), run: function () { return moveGuest(g.id, tg.t, null, { slot: slot }); } };
+    if (tg.type === 'seat') {
+      if (tg.gid === g.id) return idle;
+      if (tg.gid) { var q = S.guests.get(tg.gid); return q ? { ok: true, text: 'Swap with ' + q.name, run: function () { return swapGuests(g.id, q.id); } } : idle; }
+      if (tg.open && tg.k <= seatsOf(tg.t)) return { ok: true, text: 'Sit here' + (tg.t === g.table ? '' : ' at ' + placeName(tg.t)), run: function () { return moveGuest(g.id, tg.t, tg.k); } };
+      return idle;
+    }
+    if (tg.type === 'table') {
+      if (tg.t === g.table) return { ok: false, text: 'Already at ' + placeName(tg.t) };
+      var full = freeChair(tg.t) == null;
+      return { ok: true, text: 'Move to ' + placeName(tg.t) + (full ? '. It’s full, so you’ll choose next' : ''), run: function () { return requestMove(g.id, tg.t, null); } };
+    }
+    return idle;
+  }
+  function moveGDrag() {
+    var g = gesture, d = S.drag;
+    if (!g || g.type !== 'gdrag' || !d || !dragGhost) return;
+    var x = g.cx, y = g.cy, tg = dragTargetAt(x, y);
+    var ht = d.kind === 'chair' ? d.t : tg ? tg.t : null;
+    if (ht !== d.slotsT) { drawDragSlots(ht); tg = dragTargetAt(x, y); }
+    var key = tg ? [tg.type, tg.t, tg.k, tg.j, tg.side].join(':') : '';
+    if (key !== d.key) {
+      d.key = key;
+      if (d.overEl) d.overEl.classList.remove('drop');
+      var act = dragAction(tg);
+      d.act = act;
+      d.overEl = act.ok && tg ? tg.el : null;
+      if (d.overEl) d.overEl.classList.add('drop');
+      dragGhost.lastChild.textContent = act.text.trim();
+    }
+    var w = dragGhost.offsetWidth, h = dragGhost.offsetHeight;
+    var gx = d.touch ? x - w / 2 : x + 16, gy = d.touch ? y - h - 44 : y + 18;
+    if (gy < 6) gy = y + 36;
+    gx = Math.max(6, Math.min(window.innerWidth - w - 6, gx));
+    gy = Math.max(6, Math.min(window.innerHeight - h - 6, gy));
+    dragGhost.style.transform = 'translate(' + Math.round(gx) + 'px,' + Math.round(gy) + 'px)';
+  }
+  /* Near the edge of the map, keep sliding the map so far tables can be reached */
+  function dragLoop() {
+    cancelAnimationFrame(dragRaf);
+    dragRaf = requestAnimationFrame(function step() {
+      var g = gesture;
+      if (!S.drag || !g || g.type !== 'gdrag') return;
+      if (g.far) {
+        var r = stage.getBoundingClientRect(), E = 46, vx = 0, vy = 0;
+        if (g.cx < r.left + E) vx = r.left + E - g.cx; else if (g.cx > r.right - E) vx = r.right - E - g.cx;
+        if (g.cy < r.top + E) vy = r.top + E - g.cy; else if (g.cy > r.bottom - E) vy = r.bottom - E - g.cy;
+        if (vx || vy) {
+          var cl = function (v) { return Math.max(-14, Math.min(14, v * 0.3)); };
+          view = { k: view.k, x: view.x + cl(vx), y: view.y + cl(vy) };
+          S.userView = true;
+          applyView();
+          dragRetarget();
+          moveGDrag();
+        }
+      }
+      dragRaf = requestAnimationFrame(step);
+    });
+  }
+  function dragRetarget() { if (S.drag) S.drag.key = null; }
+  /* The plan was redrawn under a drag (someone else changed something): pick it back up */
+  function dragAfterRender() {
+    var d = S.drag;
+    if (!d) return;
+    if (d.gid) {
+      var gu = S.guests.get(d.gid);
+      if (!gu) { endGDrag(); if (gesture && gesture.type === 'gdrag') gesture = null; return; }
+      d.t = gu.table; d.k = gu.order;
+    } else if (!S.tables.has(d.t) || d.k > seatsOf(d.t)) { endGDrag(); if (gesture && gesture.type === 'gdrag') gesture = null; return; }
+    var se = srcSeatEl();
+    if (se) se.classList.add('dragsrc');
+    var st = d.slotsT;
+    d.slotsT = undefined; d.key = null; d.overEl = null;
+    drawDragSlots(st);
+    moveGDrag();
+  }
   svg.addEventListener('wheel', function (e) {
     e.preventDefault();
     var p = rel(e);
@@ -1992,15 +2230,20 @@ body.arranging .seat{cursor:pointer}
   function moveGuest(id, to, seatK, opts) {
     opts = opts || {};
     var g = S.guests.get(id);
-    if (!g || (g.table === to && !seatK)) return Promise.resolve();
+    if (!g || (g.table === to && !seatK && !opts.slot)) return Promise.resolve();
     var from = g.table, fromOrder = g.order, name = g.name, seatsAfter = null, chosen = null, snap = null, writes = null;
     if (to === 0) chosen = 0;
     else if (seatK) chosen = seatK;
     else chosen = freeChair(to);
+    if (to && opts.slot) chosen = null;
     if (to && chosen == null) {
-      if (!opts.addSeat) return Promise.resolve();
-      var model = chairModel(to), slot = defaultSlot(model);
-      model.chairs.splice(slot.j - 1, 0, { side: model.long ? slot.side : null, g: { id: id, name: name, table: from, order: fromOrder } });
+      if (!opts.addSeat && !opts.slot) return Promise.resolve();
+      var model = chairModel(to), slot = opts.slot || defaultSlot(model);
+      if (model.chairs.length >= 30) { toast(PlaceName(to) + ' already has 30 seats.'); return Promise.resolve(); }
+      model.over = model.over.filter(function (o) { return o.id !== id; });
+      model.chairs.forEach(function (c) { if (c.g && c.g.id === id) c.g = null; });
+      var sj = Math.max(1, Math.min(model.chairs.length + 1, slot.j));
+      model.chairs.splice(sj - 1, 0, { side: model.long ? slot.side : null, g: { id: id, name: name, table: from, order: fromOrder } });
       snap = snapTable(to);
       writes = commitChairs(to, model);
       seatsAfter = model.chairs.length;
@@ -2552,6 +2795,7 @@ body.arranging .seat{cursor:pointer}
   document.addEventListener('keydown', function (e) {
     var t = e.target instanceof Element ? e.target : null;
     var typing = t && t.closest('input, textarea, select');
+    if (S.drag && e.key === 'Escape') { e.preventDefault(); endGDrag(); if (gesture && gesture.type === 'gdrag') gesture = null; return; }
     if (S.tmove && !typing && !document.querySelector('dialog[open]')) {
       var stp = e.shiftKey ? 32 : 8, nudge = { ArrowLeft: [-stp, 0], ArrowRight: [stp, 0], ArrowUp: [0, -stp], ArrowDown: [0, stp] }[e.key];
       if (nudge) { e.preventDefault(); var cp = S.tmove.attach && S.lay && S.lay.place[S.tmove.n] ? S.lay.place[S.tmove.n] : S.tmove.pos; S.tmove.pos = { x: cp.x + nudge[0], y: cp.y + nudge[1] }; S.tmove.attach = null; scheduleRender(); return; }
