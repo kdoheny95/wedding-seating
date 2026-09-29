@@ -1,0 +1,2175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}</style>
+<title>Seating Chart</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-title" content="Seating">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://bwmtsiskztrowezcoipo.supabase.co" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wdth,wght@0,75..100,300..800;1,75..100,300..800&display=swap">
+<style>
+/* Layout: the venue floor plan redrawn as a zoomable sheet, tables spread just enough to print every guest's name beside their chair; a slim toolbar on top, map controls floating on the sheet. The sheet is paper white by design in every theme. */
+:root{
+  color-scheme:light;
+  --desk:#dfe3e9;
+  --paper:#ffffff;
+  --ink:#141414;
+  --ink-2:#474d57;
+  --ink-3:#6b717c;
+  --line:#d4d8df;
+  --ui:#1f2d4d;
+  --ui-soft:#e9edf5;
+  --wall:#bcbcbc;
+  --plant:#6f9c86;
+  --chair:#1b1b1b;
+  --table:#585858;
+  --cyan:#65d9e6;
+  --pink:#f466b0;
+  --yellow:#fef665;
+  --lime:#a3df6e;
+  --green4:#73b462;
+  --red:#fe1100;
+  --open:#1f8a55;
+  --open-wash:#e2f5e9;
+  --over:#c62828;
+  --over-wash:#fdeaea;
+  --mark:#fff0a6;
+  --flash:#ffd84d;
+  --font:"Open Sans","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--desk);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;margin:0;text-align:inherit}
+button:disabled{cursor:default}
+:focus-visible{outline:2.5px solid #2b6fe0;outline-offset:2px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+.app{position:fixed;top:env(safe-area-inset-top,0px);right:0;bottom:env(safe-area-inset-bottom,0px);left:0;display:flex;flex-direction:column}
+
+/* Toolbar */
+.bar{flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--paper);border-bottom:1px solid var(--line);z-index:20}
+.brand{flex:none;display:grid;line-height:1.15;margin-right:6px}
+.brand b{font-size:15px;font-weight:700;letter-spacing:.01em}
+.brand span{font-size:12px;color:var(--ink-3)}
+.search{position:relative;flex:1 1 280px;max-width:420px;min-width:0}
+.search input{width:100%;height:42px;padding:0 40px 0 38px;border:1px solid var(--line);border-radius:10px;background:#f7f8fa;font-size:16px}
+.search input::placeholder{color:var(--ink-3)}
+.search input:placeholder-shown{padding-right:10px}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;color:var(--ink-3);pointer-events:none}
+.s-clear{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:34px;height:34px;border-radius:8px;color:var(--ink-2)}
+.results{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:40;max-height:min(60vh,420px);overflow:auto;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--paper);box-shadow:0 12px 36px rgba(20,25,35,.2)}
+.res{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%;padding:10px 12px;border-radius:8px}
+.res:hover,.res.active{background:var(--ui-soft)}
+.res .rn{min-width:0;font-weight:600;overflow-wrap:anywhere}
+.res .rw{flex:none;font-size:13px;color:var(--ink-2)}
+.nores{margin:0;padding:10px 12px;font-size:14px;color:var(--ink-2)}
+.tb{flex:none;display:inline-flex;align-items:center;gap:7px;height:42px;padding:0 13px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-weight:700;font-size:14px;white-space:nowrap}
+.tb:hover:not(:disabled){border-color:#9aa3b2}
+.tb:disabled{opacity:.4}
+.spacer{flex:1}
+@media (max-width:900px){.brand span{display:none}}
+@media (max-width:720px){.brand{display:none}.tb .lbl{display:none}.tb{padding:0 11px}}
+
+/* Stage and sheet */
+.stage{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--desk)}
+#svg{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+#svg.panning{cursor:grabbing}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-2);font-size:15px;pointer-events:none}
+
+/* Floating controls */
+.float{position:absolute;z-index:10}
+.card{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.97);box-shadow:0 6px 22px rgba(20,25,35,.14)}
+.zoom{right:12px;bottom:12px;display:grid;overflow:hidden}
+.zoom button{display:grid;place-items:center;width:46px;height:44px;font-size:22px;font-weight:600;color:var(--ink)}
+.zoom button+button{border-top:1px solid var(--line)}
+.zoom .fit{font-size:12px;font-weight:700}
+.zoom button:hover{background:var(--ui-soft)}
+.stats{left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 90px)}
+.chip{display:inline-flex;align-items:baseline;gap:5px;padding:6px 11px;font-size:13.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.97);box-shadow:0 3px 12px rgba(20,25,35,.1)}
+.chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+button.chip:hover{border-color:#9aa3b2}
+.chip.warn{color:var(--over);background:#fff5f5;border-color:#f3c9c9}
+.chip.warn b{color:var(--over)}
+.chip.attn{color:#7a520f;background:#fff8e6;border-color:#ecd9a8}
+.chip .short{display:none}
+@media (max-width:560px){.chip .long{display:none}.chip .short{display:inline}.chip{padding:5px 10px;font-size:13px}}
+.chip.attn b{color:#7a520f}
+.hint{left:12px;top:12px;max-width:min(430px,calc(100% - 24px));padding:12px 14px;font-size:13.5px;color:var(--ink-2)}
+.hint strong{display:block;margin-bottom:4px;font-size:14px;color:var(--ink)}
+.hint ul{margin:0;padding-left:18px}
+.hint li+li{margin-top:2px}
+.hint .row{display:flex;justify-content:flex-end;margin-top:8px}
+.banner{left:50%;top:12px;transform:translateX(-50%);max-width:min(560px,calc(100% - 24px));padding:10px 14px;font-size:14px;color:var(--ink-2);text-align:center}
+.unseated{right:12px;top:12px;width:min(300px,calc(100% - 24px));padding:12px 14px}
+.unseated h2{margin:0;font-size:14px;color:#7a520f}
+.unseated p{margin:2px 0 8px;font-size:13px;color:var(--ink-2)}
+.unseated ul{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none;max-height:180px;overflow:auto}
+.pchip{padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:#fffdf5;font-size:13.5px;font-weight:600}
+.pchip.sel{background:var(--ui);border-color:var(--ui);color:#fff}
+
+/* Table panel */
+.panel{left:50%;bottom:12px;transform:translateX(-50%);width:min(520px,calc(100% - 24px));padding:14px 16px}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.panel h2{margin:0;font-size:18px}
+.panel p{margin:2px 0 0;font-size:13.5px;color:var(--ink-2)}
+.panel .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.x{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;color:var(--ink-2)}
+.x:hover{background:var(--ui-soft)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:0 15px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-weight:700;font-size:14px;line-height:1.2;text-align:center}
+.btn:hover{border-color:#9aa3b2}
+.btn.primary{background:var(--ui);border-color:var(--ui);color:#fff}
+.btn.danger{background:var(--over);border-color:var(--over);color:#fff}
+.btn.quiet-danger{color:var(--over)}
+.btn.small{min-height:36px;padding:0 12px;font-size:13.5px}
+.btn.wide{width:100%;padding-block:10px}
+
+/* Move bar */
+.movebar{position:fixed;left:0;right:0;bottom:0;z-index:30;border-top:1px solid var(--line);background:var(--paper);box-shadow:0 -10px 30px rgba(20,25,35,.14)}
+.mb-inner{display:grid;gap:10px;max-width:1100px;margin:0 auto;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.mb-title{margin:0;font-size:16px;line-height:1.35}
+.mb-hint{margin:2px 0 0;font-size:14px;color:var(--ink-2)}
+.mb-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.mb-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:48px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+.mb-grid .n{font-size:18px;font-weight:700;line-height:1}
+.mb-grid .s{font-size:11px;font-weight:700;color:var(--ink-3)}
+.mb-grid .open{border-color:var(--open);background:var(--open-wash)}
+.mb-grid .open .s{color:var(--open)}
+.mb-grid .here{opacity:.45}
+.mb-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+@media (min-width:700px){.mb-grid{grid-template-columns:repeat(14,minmax(0,1fr))}}
+@media (min-width:1024px) and (pointer:fine){.mb-inner{grid-template-columns:minmax(0,1fr) auto;align-items:center}.mb-grid{display:none}}
+@media (max-width:560px){.mb-actions .btn{flex:1 1 auto}}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(70px + var(--mb-h,0px) + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:14px;width:max-content;max-width:calc(100vw - 32px);padding:11px 12px 11px 16px;border-radius:12px;background:#1b2334;color:#fff;box-shadow:0 12px 36px rgba(20,25,35,.3);font-size:14px;transform:translateX(-50%)}
+.toast button{flex:none;min-height:32px;padding:0 10px;border-radius:8px;color:#ffd27a;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+
+/* Changes drawer */
+.scrim{position:fixed;inset:0;z-index:48;background:rgba(12,18,30,.4)}
+.drawer{position:fixed;top:0;right:0;bottom:0;z-index:50;display:flex;flex-direction:column;width:min(420px,100vw);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);border-left:1px solid var(--line);background:var(--paper);box-shadow:0 12px 40px rgba(20,25,35,.25)}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 4px}
+.drawer-head h2{margin:0;font-size:18px}
+.drawer-sub{margin:0;padding:0 18px 12px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+.changes{flex:1;margin:0;padding:4px 18px 16px;overflow:auto;list-style:none}
+.changes .day{margin:16px 0 4px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.change{padding:9px 0;border-bottom:1px solid #eef0f3}
+.change .who{font-size:12.5px;color:var(--ink-3)}
+.change .what{font-size:14px}
+.changes .empty{padding:18px 0;font-size:14px;color:var(--ink-2)}
+.drawer-foot{display:grid;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
+
+/* Dialogs */
+dialog{width:min(470px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:0;border-radius:16px;background:var(--paper);color:var(--ink);box-shadow:0 12px 40px rgba(20,25,35,.3)}
+dialog::backdrop{background:rgba(10,15,25,.45)}
+.dlg{display:grid;gap:14px;padding:22px}
+.dlg h2{margin:0;font-size:19px;line-height:1.25}
+.dlg p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.field{display:grid;gap:6px}
+.field label{font-size:14px;font-weight:700}
+.field input,.field select{height:46px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#f7f8fa;font-size:16px}
+.dlg .warn{font-size:14px;font-weight:600;color:var(--over)}
+.dlg .sub{font-weight:600;color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:4px}
+.swaps{display:flex;flex-wrap:wrap;gap:6px}
+.swaps .btn{min-height:38px;font-weight:600}
+
+/* ---------- The floor plan drawing ---------- */
+.sheet{fill:var(--paper)}
+.sheet-shadow{fill:rgba(20,25,35,.14)}
+.wall{fill:none;stroke:var(--wall);stroke-width:7;stroke-linejoin:miter;stroke-linecap:square}
+.wall-in{fill:none;stroke:#fff;stroke-width:2.6;stroke-linejoin:miter;stroke-linecap:square}
+.thin{fill:none;stroke:#9d9d9d;stroke-width:2}
+.thin2{fill:none;stroke:#b9b9b9;stroke-width:1.5}
+.strip{fill:#f5f6f5;stroke:#b3b3b3;stroke-width:1.6}
+.plant{fill:none;stroke:var(--plant);stroke-width:.9;stroke-linecap:round}
+.bigplant{fill:#cfe5d8;stroke:#6f9c86;stroke-width:.6}
+.tree{fill:url(#treeFill);stroke:#8fa39a;stroke-width:.5}
+.door{fill:none;stroke:#8d8d8d;stroke-width:.8}
+.fx{fill:#fff;stroke:#6b6b6b;stroke-width:.6}
+.fx-pink{fill:var(--pink);stroke:#6b6b6b;stroke-width:.5}
+.fx-yellow{fill:var(--yellow);stroke:#6b6b6b;stroke-width:.5}
+.fx-lime{fill:var(--lime);stroke:#6b6b6b;stroke-width:.5}
+.fx-green{fill:var(--green4);stroke:#5a8f4c;stroke-width:1}
+.fx-cyan{fill:var(--cyan);stroke:#555;stroke-width:.6}
+.fx-gray{fill:#d9d9d9;stroke:#8a8a8a;stroke-width:.5}
+.rope{fill:#d4d4d4;stroke:#8a8a8a;stroke-width:1.5}
+.lbl{font-family:var(--font);fill:#111;font-weight:400}
+.lbl-red{font-family:var(--font);fill:var(--red);font-weight:500}
+.floor{fill:#fff;stroke:#2a2a2a;stroke-width:2}
+.foot-t{font-family:var(--font);fill:#1b1b1b}
+
+.tshape{fill:#fff;stroke:var(--table);stroke-width:1.5}
+.tshape.c72{fill:var(--cyan)}
+.tnum{font-family:var(--font);font-weight:400;fill:#111;text-anchor:middle;pointer-events:none}
+.thit{fill:transparent}
+.chair{fill:#fff;stroke:var(--chair);stroke-width:1.2}
+.n1{font-family:var(--font);font-stretch:semi-condensed;font-weight:700;font-size:12.5px;fill:#141414}
+.n2{font-family:var(--font);font-stretch:semi-condensed;font-weight:400;font-size:11.5px;fill:#4a4f58}
+.no{font-family:var(--font);font-stretch:semi-condensed;font-style:italic;font-weight:600;font-size:11.5px;fill:var(--open)}
+.shit{fill:transparent}
+.hl{fill:transparent}
+.seat{cursor:pointer}
+.seat.open .chair{fill:var(--open-wash);stroke:var(--open);stroke-dasharray:3 2}
+.seat.over .chair{fill:var(--over-wash);stroke:var(--over);stroke-dasharray:3 2}
+.seat.over .n1,.seat.over .n2{fill:var(--over)}
+.seat:hover .hl{fill:#eef2f8}
+.seat.hit .hl{fill:var(--mark)}
+.seat.flash .hl{fill:var(--flash)}
+.seat.sel .hl{fill:var(--ui)}
+.seat.sel .n1,.seat.sel .n2{fill:#fff}
+.seat.sel .chair{fill:var(--ui);stroke:var(--ui)}
+.tbl.over .tshape{stroke:var(--over);stroke-width:2.5}
+body.moving .tbl{cursor:pointer}
+body.moving .tbl:hover .tshape,body.moving .tbl.hover .tshape{stroke:#2b6fe0;stroke-width:4}
+body.moving .tbl.cur .tshape{stroke-dasharray:6 4}
+body.readonly .seat{cursor:default}
+body.readonly .seat:hover .hl{fill:transparent}
+@media (prefers-reduced-motion:no-preference){
+  .seat.flash .hl{animation:blink 1s ease-in-out 3}
+}
+@keyframes blink{50%{fill:var(--mark)}}
+
+.loading.gate{padding:24px;pointer-events:auto}
+.gate-card{display:grid;gap:8px;max-width:430px;padding:22px 24px;border:1px solid var(--line);border-radius:14px;background:var(--paper);box-shadow:0 6px 22px rgba(20,25,35,.14);font-size:15px;line-height:1.45;color:var(--ink-2);text-align:center}
+.gate-card strong{font-size:18px;line-height:1.3;color:var(--ink)}
+.me-row{margin:0 0 2px;font-size:13.5px;color:var(--ink-2)}
+.linkish{color:var(--ui);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand"><b id="brand-a">Seating chart</b><span id="brand-b">&nbsp;</span></div>
+    <div class="search" id="search">
+      <span class="s-icon"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <input id="q" type="search" placeholder="Find a guest" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-label="Find a guest or table" aria-controls="results" aria-expanded="false" aria-autocomplete="list">
+      <button class="s-clear" id="q-clear" type="button" aria-label="Clear search" hidden><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      <div class="results" id="results" role="listbox" aria-label="Matching guests" hidden></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="tb" id="btn-undo" type="button" disabled title="Nothing to undo yet"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Undo</span></button>
+    <button class="tb" id="btn-add" type="button" aria-label="Add a guest"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="9.5" cy="8" r="3.8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20c.4-3.6 3.1-5.8 6.5-5.8s6.1 2.2 6.5 5.8M19 7.5v6M16 10.5h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="lbl">Add guest</span></button>
+    <button class="tb" id="btn-changes" type="button" aria-label="Recent changes"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="lbl">Changes</span></button>
+  </header>
+
+  <div class="stage" id="stage">
+    <svg id="svg" aria-label="Floor plan with every guest's name at their seat" role="img">
+      <defs>
+        <radialGradient id="treeFill" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#e9f1ec"/><stop offset=".55" stop-color="#b9cfc3"/><stop offset="1" stop-color="#7f9d8e"/></radialGradient>
+      </defs>
+      <g id="world"><g id="sheet"></g><g id="room"></g><g id="tblLayer"></g><g id="seatLayer"></g></g>
+    </svg>
+    <div class="loading" id="loading">Loading the floor plan&hellip;</div>
+
+    <div class="float card hint" id="hint" hidden>
+      <strong>How this works</strong>
+      <ul>
+        <li>Drag to move around. Pinch, scroll, or use + and &minus; to zoom.</li>
+        <li class="edit">Tap a name, then tap the table where they should sit.</li>
+        <li class="edit">Tap a table to add or remove seats. Tap a green open seat to add someone.</li>
+        <li class="edit">Made a mistake? Press Undo at the top.</li>
+      </ul>
+      <div class="row"><button type="button" class="btn small" id="hint-hide">Got it</button></div>
+    </div>
+    <div class="float card banner" id="banner" role="status" hidden></div>
+    <section class="float card unseated" id="unseated" aria-labelledby="uns-h" hidden>
+      <h2 id="uns-h">Not seated yet (<span id="uns-count">0</span>)</h2>
+      <p>Tap a name, then tap a table.</p>
+      <ul id="uns-list"></ul>
+    </section>
+    <div class="float stats" id="stats"></div>
+    <div class="float card zoom" role="group" aria-label="Zoom">
+      <button type="button" id="z-in" aria-label="Zoom in">+</button>
+      <button type="button" id="z-out" aria-label="Zoom out">&minus;</button>
+      <button type="button" id="z-fit" class="fit" aria-label="Fit the whole room on screen">FIT</button>
+    </div>
+    <section class="float card panel" id="panel" aria-labelledby="panel-h" hidden>
+      <div class="panel-head">
+        <div><h2 id="panel-h"></h2><p id="panel-sub"></p></div>
+        <button type="button" class="x" id="panel-close" aria-label="Close"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="acts" id="panel-acts"></div>
+    </section>
+  </div>
+</div>
+
+<section class="sr" aria-label="Seating by table" id="sr-list"></section>
+
+<div class="movebar" id="movebar" hidden>
+  <div class="mb-inner">
+    <div>
+      <p class="mb-title">Moving <strong id="mb-name"></strong> <span id="mb-from"></span></p>
+      <p class="mb-hint" id="mb-hint">Tap the table where they should sit.</p>
+    </div>
+    <div class="mb-grid" id="mb-grid" role="group" aria-label="Choose a table"></div>
+    <div class="mb-actions">
+      <button type="button" class="btn" id="mb-rename">Change name</button>
+      <button type="button" class="btn" id="mb-takeoff">Take off table</button>
+      <button type="button" class="btn quiet-danger" id="mb-delete" hidden>Remove from guest list</button>
+      <button type="button" class="btn" id="mb-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<p class="sr" id="sr-live" aria-live="polite"></p>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-labelledby="drawer-h" hidden>
+  <div class="drawer-head">
+    <h2 id="drawer-h">Recent changes</h2>
+    <button type="button" class="x" id="drawer-close" aria-label="Close recent changes"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+  </div>
+  <p class="drawer-sub">Everyone&rsquo;s changes, newest first.</p>
+  <ol class="changes" id="changes-list"></ol>
+  <div class="drawer-foot">
+    <p class="me-row" id="me-row"></p>
+    <button type="button" class="btn wide" id="howto-show">How to use this chart</button>
+    <button type="button" class="btn wide dl-btn">Download as a spreadsheet</button>
+  </div>
+</aside>
+
+<dialog id="dlg-add" aria-labelledby="add-title">
+  <form class="dlg" id="add-form" novalidate>
+    <h2 id="add-title">Add a guest</h2>
+    <div class="field"><label for="add-name">Full name</label><input id="add-name" type="text" autocomplete="off" spellcheck="false" maxlength="80" enterkeyhint="done"></div>
+    <div class="field"><label for="add-table">Table</label><select id="add-table"></select></div>
+    <p class="warn" id="add-warn" hidden></p>
+    <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="add-submit">Add guest</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-rename" aria-labelledby="rn-title">
+  <form class="dlg" id="rn-form" novalidate>
+    <h2 id="rn-title">Change name</h2>
+    <div class="field"><label for="rn-name">Name as it should appear</label><input id="rn-name" type="text" autocomplete="off" spellcheck="false" maxlength="80" enterkeyhint="done"></div>
+    <p class="warn" id="rn-warn" hidden></p>
+    <div class="actions"><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary">Save name</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-full" aria-labelledby="full-title">
+  <div class="dlg">
+    <h2 id="full-title"></h2>
+    <p id="full-body"></p>
+    <button type="button" class="btn primary wide" id="full-add"></button>
+    <p class="sub" id="full-swap-label"></p>
+    <div class="swaps" id="full-swaps"></div>
+    <div class="actions"><button type="button" class="btn" data-close>Cancel</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-confirm" aria-labelledby="cf-title">
+  <div class="dlg">
+    <h2 id="cf-title"></h2>
+    <p id="cf-body"></p>
+    <div class="actions"><button type="button" class="btn" data-close>Keep them</button><button type="button" class="btn danger" id="cf-ok">Remove</button></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-name" aria-labelledby="name-title">
+  <form class="dlg" id="name-form" novalidate>
+    <h2 id="name-title">What&rsquo;s your name?</h2>
+    <p>So everyone can see who moved whom. This phone or computer only asks once.</p>
+    <div class="field"><label for="name-in">Your first name</label><input id="name-in" type="text" autocomplete="given-name" spellcheck="false" maxlength="40" enterkeyhint="done"></div>
+    <div class="actions"><button type="button" class="btn" id="name-skip">Skip</button><button type="submit" class="btn primary">Continue</button></div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var SUPA = { url: 'https://bwmtsiskztrowezcoipo.supabase.co', key: 'sb_publishable_o7RFEi3eYBl-_IKLvpP6tg_6vOd_mk5' };
+
+  /* ================= The Prismm plan, in its own drawing units ================= */
+  var TABLES = [];
+  for (var ti = 1; ti <= 29; ti++) TABLES.push(ti);
+  var T = {};
+  function spec(n, kind, cx, cy, end) { T[n] = { n: n, kind: kind, cx: cx, cy: cy, end: end || null }; }
+  spec(1, 'long', 506.5, 302.7, 'top'); spec(2, 'long', 506.5, 337.3); spec(3, 'long', 506.5, 371.9, 'bottom');
+  spec(9, 'long', 583.5, 264.5); spec(10, 'long', 583.5, 299.1); spec(11, 'long', 583.8, 344.0); spec(12, 'long', 583.8, 378.6, 'bottom');
+  spec(18, 'long', 708.5, 263.3); spec(17, 'long', 708.5, 297.9); spec(16, 'long', 706.4, 348.8); spec(15, 'long', 706.4, 383.4);
+  spec(25, 'long', 785.0, 261.4); spec(26, 'long', 785.0, 296.0); spec(27, 'long', 785.5, 343.7); spec(28, 'long', 785.5, 378.3);
+  spec(13, 'longh', 591.2, 421.2, 'left'); spec(14, 'longh', 702.6, 425.0);
+  spec(8, 'round', 546.7, 293.9); spec(6, 'round', 546.3, 381.9); spec(4, 'round', 515.8, 422.1);
+  spec(19, 'round', 743.6, 264.0); spec(20, 'round', 743.6, 301.4); spec(21, 'round', 742.7, 344.5); spec(22, 'round', 742.7, 384.7);
+  spec(24, 'round', 746.4, 446.5); spec(23, 'round', 784.8, 425.9);
+  spec(7, 'round72', 546.7, 339.8); spec(5, 'round72', 549.5, 446.5);
+  spec(29, 'sweet', 651.5, 259.9);
+  var KIND_NAME = { long: 'Long table', longh: 'Long table', round: '60 inch round', round72: '72 inch round', sweet: 'Sweetheart table' };
+  var PLAN_SEATS = { 1: 11, 2: 10, 3: 9, 4: 8, 5: 10, 6: 8, 7: 10, 8: 9, 9: 8, 10: 8, 11: 8, 12: 9, 13: 9, 14: 8, 15: 8, 16: 8, 17: 8, 18: 8, 19: 7, 20: 8, 21: 8, 22: 8, 23: 9, 24: 8, 25: 8, 26: 8, 27: 8, 28: 8, 29: 2 };
+  var COLS = [
+    { id: 'A', x: 506.5, units: [[1, 2, 3]] },
+    { id: 'B', x: 546.7, units: [[8], [7], [6]] },
+    { id: 'C', x: 583.6, units: [[9, 10], [11, 12]] },
+    { id: 'D', x: 707.5, units: [[18, 17], [16, 15]] },
+    { id: 'E', x: 743.2, units: [[19], [20], [21], [22]] },
+    { id: 'F', x: 785.2, units: [[25, 26], [27, 28]] }
+  ];
+  var LOWER_LEFT = [4, 5, 13], LOWER_RIGHT = [23, 24, 14];
+  var PL = { drapeOut: 218.8, drapeIn: 232, top: 236, door: 403, rope: 467.7, fx0: 612.7, fx1: 677.1, fy0: 274.9, fy1: 377.5, dj: 490.2, right: 805 };
+
+  /* ================= Drawing constants (screen pixels at 100%) ================= */
+  var K = { CW: 15, CD: 11, CG: 3, LTW: 40, PITCH: 32, LG: 5, H2: 27, H1: 15, MAXW: 124 };
+  var GAPX = 24, GAPF = 28, GAPV = 12, MARGV = 10;
+  var LS = 2.4, kL = 2.0, kDJ = 1.9, kR = 2.0, kT = 2.0, kD = 2.2, kP = 2.0;
+
+  /* ================= Helpers ================= */
+  function $(s, r) { return (r || document).querySelector(s); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function norm(s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function tid(n) { return 't' + (n < 10 ? '0' : '') + n; }
+  function cleanName(s) { return String(s || '').replace(/\s+/g, ' ').trim().slice(0, 80); }
+  function placeName(n) { return n === 0 ? 'Not seated yet' : n === 29 ? 'the sweetheart table' : 'Table ' + n; }
+  function PlaceName(n) { return n === 0 ? 'Not seated yet' : n === 29 ? 'The sweetheart table' : 'Table ' + n; }
+  function inPlace(n) { return n ? 'at ' + placeName(n) : 'in Not seated yet'; }
+  function f1(v) { return (Math.round(v * 10) / 10).toString(); }
+  var motionMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var fineMQ = window.matchMedia('(min-width: 1024px) and (pointer: fine)');
+
+  /* ================= State ================= */
+  var S = {
+    db: null, user: null, dl: null, me: null, canWrite: null, failed: null,
+    meta: {}, dev: '', myName: '', nameAsked: false, netDown: false, pending: false, key: '',
+    tables: new Map(), guests: new Map(), changes: [],
+    loadedT: false, loadedG: false, fontsReady: false, by: new Map(),
+    sel: null, flash: null, flashTimer: 0, panel: null,
+    q: '', qn: '', resOpen: false, resIdx: 0, items: [],
+    undo: [], pruning: false, fullCtx: null, renameId: null, confirmId: null, addDup: false,
+    lay: null, fitted: false, userView: false
+  };
+  function seatsOf(n) { var t = S.tables.get(n); return t ? t.seats : (S.loadedT && S.tables.size ? 0 : PLAN_SEATS[n]); }
+  function at(n) { return S.by.get(n) || []; }
+  function canEdit() { return !!S.db && S.canWrite !== false && !S.failed; }
+  function isHit(name) { return S.qn.length >= 2 && norm(name).indexOf(S.qn) !== -1; }
+
+  function derive() {
+    var by = new Map();
+    by.set(0, []);
+    TABLES.forEach(function (n) { by.set(n, []); });
+    S.guests.forEach(function (g) { (by.get(g.table) || by.get(0)).push(g); });
+    by.forEach(function (list) { list.sort(function (a, b) { return (a.order - b.order) || a.name.localeCompare(b.name); }); });
+    S.by = by;
+  }
+  /* Which guest sits in which chair: chairs are numbered clockwise; a guest's "order" is their chair number. */
+  function seatMap(n) {
+    var cap = seatsOf(n), chairs = [], extra = [];
+    for (var i = 0; i < cap; i++) chairs.push(null);
+    at(n).forEach(function (g) {
+      var k = Math.round(g.order) - 1;
+      if (k >= 0 && k < cap && !chairs[k]) chairs[k] = g; else extra.push(g);
+    });
+    var rest = [];
+    extra.forEach(function (g) { var k = chairs.indexOf(null); if (k === -1) rest.push(g); else chairs[k] = g; });
+    return { chairs: chairs, over: rest };
+  }
+  function freeChair(n) { var m = seatMap(n); var k = m.chairs.indexOf(null); return k === -1 ? null : k + 1; }
+  function openCount(n) { var m = seatMap(n); return m.chairs.filter(function (c) { return !c; }).length - m.over.length; }
+
+  /* ================= Measuring names ================= */
+  var meas = (function () {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:10px;height:10px;visibility:hidden';
+    document.body.appendChild(svg);
+    var cache = new Map();
+    return {
+      w: function (text, cls) {
+        var key = cls + '|' + text;
+        var v = cache.get(key);
+        if (v != null) return v;
+        var t = document.createElementNS(ns, 'text');
+        t.setAttribute('class', cls);
+        t.textContent = text;
+        svg.appendChild(t);
+        v = t.getComputedTextLength() || text.length * 6.2;
+        svg.removeChild(t);
+        cache.set(key, v);
+        return v;
+      },
+      clear: function () { cache.clear(); }
+    };
+  })();
+  function splitName(name) {
+    var parts = String(name).trim().split(/\s+/);
+    if (parts.length === 1) return [parts[0]];
+    var i = 1;
+    if (/^(rev|dr|mr|mrs|ms|fr|pastor|father|tita|tito)\.?$/i.test(parts[0]) && parts.length > 2) i = 2;
+    return [parts.slice(0, i).join(' '), parts.slice(i).join(' ')];
+  }
+  function labelFor(state, guest) {
+    if (state === 'open') return { lines: ['Open seat'], cls: ['no'], w: meas.w('Open seat', 'no'), h: K.H1 };
+    var lines = splitName(guest.name);
+    var w1 = meas.w(lines[0], 'n1'), w2 = lines[1] ? meas.w(lines[1], 'n2') : 0;
+    return { lines: lines, cls: ['n1', 'n2'], w: Math.min(K.MAXW, Math.max(w1, w2)), ws: [w1, w2], h: lines.length > 1 ? K.H2 : K.H1 };
+  }
+
+  /* ================= Table geometry (relative to the table's center) ================= */
+  function rectOfLabel(s) {
+    var x0 = s.align === 'start' ? s.lx : s.align === 'end' ? s.lx - s.lab.w : s.lx - s.lab.w / 2;
+    return { x0: x0, x1: x0 + s.lab.w, y0: s.top, y1: s.top + s.lab.h };
+  }
+  function hit(a, b, pad) { return a.x0 < b.x1 + pad && b.x0 < a.x1 + pad && a.y0 < b.y1 + pad && b.y0 < a.y1 + pad; }
+  function chairRect(s) { var r = 9; return { x0: s.cx - r, x1: s.cx + r, y0: s.cy - r, y1: s.cy + r }; }
+
+  function seatContents(n) {
+    var m = seatMap(n), list = [];
+    m.chairs.forEach(function (g, i) { list.push({ k: i + 1, state: g ? 'guest' : 'open', guest: g }); });
+    m.over.forEach(function (g, i) { list.push({ k: m.chairs.length + i + 1, state: 'over', guest: g }); });
+    list.forEach(function (s) { s.lab = labelFor(s.state, s.guest); });
+    return list;
+  }
+
+  function roundPlace(seats, Rt, th0) {
+    var n = seats.length, Rc = Rt + K.CG + K.CD / 2;
+    seats.forEach(function (s, i) {
+      var th = (th0 + i * 360 / n) * Math.PI / 180, sn = Math.sin(th), cs = Math.cos(th);
+      s.cx = Rc * sn; s.cy = -Rc * cs; s.rot = th * 180 / Math.PI;
+      if (Math.abs(sn) < 0.26) {
+        s.align = 'middle'; s.lx = s.cx;
+        s.top = cs > 0 ? s.cy - K.CD / 2 - 4 - s.lab.h : s.cy + K.CD / 2 + 4;
+      } else if (sn > 0) { s.align = 'start'; s.lx = s.cx + K.CW / 2 + K.LG; s.top = s.cy - s.lab.h / 2; }
+      else { s.align = 'end'; s.lx = s.cx - K.CW / 2 - K.LG; s.top = s.cy - s.lab.h / 2; }
+    });
+  }
+  function roundClear(seats) {
+    var rs = seats.map(rectOfLabel), cs = seats.map(chairRect);
+    for (var i = 0; i < rs.length; i++) {
+      for (var j = i + 1; j < rs.length; j++) if (hit(rs[i], rs[j], 2)) return false;
+      for (var c = 0; c < cs.length; c++) if (c !== i && hit(rs[i], cs[c], 1)) return false;
+    }
+    return true;
+  }
+  function roundNeed(seats) {
+    var n = seats.length, best = null;
+    if (!n) return { Rt: 30, th0: 0 };
+    [0, 180 / n].forEach(function (th0) {
+      for (var Rt = 26; Rt <= 170; Rt += 1) {
+        roundPlace(seats, Rt, th0);
+        if (roundClear(seats)) { if (!best || Rt < best.Rt) best = { Rt: Rt, th0: th0 }; break; }
+      }
+    });
+    return best || { Rt: 170, th0: 0 };
+  }
+  function longPlace(t, seats) {
+    var S2 = seats.length, horiz = t.kind === 'longh';
+    var end = t.end && S2 % 2 === 1 ? 1 : 0;
+    var rest = S2 - end, a = Math.ceil(rest / 2), b = Math.floor(rest / 2);
+    var pitch = K.PITCH;
+    if (horiz) {
+      var mw = 0;
+      seats.forEach(function (s) { mw = Math.max(mw, s.lab.w); });
+      pitch = Math.max(K.PITCH, mw + 12);
+    }
+    var len = Math.max(a, b, 1) * pitch + 8, half = len / 2, off = K.LTW / 2 + K.CG + K.CD / 2;
+    var order = [];
+    var idx = 0;
+    function take() { return seats[idx++]; }
+    if (!horiz) {
+      if (end && t.end === 'top') order.push(['top', 0]);
+      for (var i = 0; i < a; i++) order.push(['right', i]);
+      if (end && t.end === 'bottom') order.push(['bottom', 0]);
+      for (var j = b - 1; j >= 0; j--) order.push(['left', j]);
+    } else {
+      for (var i2 = 0; i2 < a; i2++) order.push(['top', i2]);
+      if (end && t.end === 'right') order.push(['right', 0]);
+      for (var j2 = b - 1; j2 >= 0; j2--) order.push(['bottom', j2]);
+      if (end && t.end === 'left') order.push(['left', 0]);
+    }
+    var shiftA = (Math.max(a, b) - a) * pitch / 2, shiftB = (Math.max(a, b) - b) * pitch / 2;
+    order.forEach(function (o) {
+      var s = take();
+      if (!s) return;
+      var side = o[0], i3 = o[1];
+      if (!horiz) {
+        if (side === 'right') { s.cx = off; s.cy = -half + 4 + shiftA + pitch * (i3 + 0.5); s.rot = 90; s.align = 'start'; s.lx = s.cx + K.CD / 2 + K.LG; s.top = s.cy - s.lab.h / 2; }
+        else if (side === 'left') { s.cx = -off; s.cy = -half + 4 + shiftB + pitch * (i3 + 0.5); s.rot = -90; s.align = 'end'; s.lx = s.cx - K.CD / 2 - K.LG; s.top = s.cy - s.lab.h / 2; }
+        else if (side === 'top') { s.cx = 0; s.cy = -half - K.CG - K.CD / 2; s.rot = 0; s.align = 'middle'; s.lx = 0; s.top = s.cy - K.CD / 2 - 4 - s.lab.h; }
+        else { s.cx = 0; s.cy = half + K.CG + K.CD / 2; s.rot = 180; s.align = 'middle'; s.lx = 0; s.top = s.cy + K.CD / 2 + 4; }
+      } else {
+        if (side === 'top') { s.cy = -off; s.cx = -half + 4 + shiftA + pitch * (i3 + 0.5); s.rot = 0; s.align = 'middle'; s.lx = s.cx; s.top = s.cy - K.CD / 2 - 4 - s.lab.h; }
+        else if (side === 'bottom') { s.cy = off; s.cx = -half + 4 + shiftB + pitch * (i3 + 0.5); s.rot = 180; s.align = 'middle'; s.lx = s.cx; s.top = s.cy + K.CD / 2 + 4; }
+        else if (side === 'left') { s.cy = 0; s.cx = -half - K.CG - K.CD / 2; s.rot = -90; s.align = 'end'; s.lx = s.cx - K.CD / 2 - K.LG; s.top = -s.lab.h / 2; }
+        else { s.cy = 0; s.cx = half + K.CG + K.CD / 2; s.rot = 90; s.align = 'start'; s.lx = s.cx + K.CD / 2 + K.LG; s.top = -s.lab.h / 2; }
+      }
+    });
+    return { len: len, horiz: horiz };
+  }
+  function sweetPlace(seats) {
+    var n = seats.length, gap = 24, w = Math.max(40, n * gap + 8);
+    seats.forEach(function (s, i) {
+      s.cx = -((n - 1) * gap) / 2 + i * gap; s.cy = -K.CG - K.CD / 2; s.rot = 0;
+      if (i === 0 && n > 1) { s.align = 'end'; s.lx = s.cx - K.CW / 2 - K.LG; s.top = s.cy - s.lab.h / 2; }
+      else if (i === n - 1 && n > 1) { s.align = 'start'; s.lx = s.cx + K.CW / 2 + K.LG; s.top = s.cy - s.lab.h / 2; }
+      else { s.align = 'middle'; s.lx = s.cx; s.top = s.cy - K.CD / 2 - 4 - s.lab.h; }
+    });
+    return { w: w };
+  }
+  function bboxOf(tb) {
+    var b = { x0: tb.shapeBox.x0, x1: tb.shapeBox.x1, y0: tb.shapeBox.y0, y1: tb.shapeBox.y1 };
+    tb.seats.forEach(function (s) {
+      var r = rectOfLabel(s), c = chairRect(s);
+      b.x0 = Math.min(b.x0, r.x0, c.x0); b.x1 = Math.max(b.x1, r.x1, c.x1);
+      b.y0 = Math.min(b.y0, r.y0, c.y0); b.y1 = Math.max(b.y1, r.y1, c.y1);
+    });
+    return b;
+  }
+  function occRects(tb, ox, oy) {
+    var out = [{ x0: tb.shapeBox.x0 - 12 + ox, x1: tb.shapeBox.x1 + 12 + ox, y0: tb.shapeBox.y0 - 12 + oy, y1: tb.shapeBox.y1 + 12 + oy }];
+    tb.seats.forEach(function (s) { var r = rectOfLabel(s); out.push({ x0: r.x0 + ox, x1: r.x1 + ox, y0: r.y0 + oy, y1: r.y1 + oy }); });
+    return out;
+  }
+
+  /* ================= Layout: spread the plan just enough for names ================= */
+  function layout() {
+    var tabs = {};
+    TABLES.forEach(function (n) { tabs[n] = { n: n, t: T[n], seats: seatContents(n) }; });
+    var rounds = [], r72 = [];
+    TABLES.forEach(function (n) {
+      var tb = tabs[n];
+      if (tb.t.kind === 'round' || tb.t.kind === 'round72') { var need = roundNeed(tb.seats); tb.need = need; (tb.t.kind === 'round' ? rounds : r72).push(tb); }
+    });
+    var R60 = 0, R72 = 0;
+    rounds.forEach(function (tb) { R60 = Math.max(R60, tb.need.Rt); });
+    r72.forEach(function (tb) { R72 = Math.max(R72, tb.need.Rt); });
+    R72 = Math.max(R72, Math.round(R60 * 1.12));
+    /* Each round table can turn its chairs half a step; keep both options and pick the one that fits the plan best */
+    rounds.concat(r72).forEach(function (tb) {
+      var R = tb.t.kind === 'round' ? R60 : R72, n = Math.max(1, tb.seats.length);
+      tb.R = R;
+      tb.shapeBox = { x0: -R, x1: R, y0: -R, y1: R };
+      tb.variants = [];
+      [0, 180 / n].forEach(function (th0) {
+        roundPlace(tb.seats, R, th0);
+        if (roundClear(tb.seats)) tb.variants.push({ th0: th0, bb: bboxOf(tb) });
+      });
+      if (!tb.variants.length) { roundPlace(tb.seats, R, tb.need.th0); tb.variants.push({ th0: tb.need.th0, bb: bboxOf(tb) }); }
+      tb.pick = 0;
+    });
+    function usePick(tb) { roundPlace(tb.seats, tb.R, tb.variants[tb.pick].th0); tb.bb = tb.variants[tb.pick].bb; }
+    TABLES.forEach(function (n) {
+      var tb = tabs[n];
+      if (tb.t.kind === 'long' || tb.t.kind === 'longh') {
+        var g = longPlace(tb.t, tb.seats);
+        tb.len = g.len; tb.horiz = g.horiz;
+        tb.shapeBox = g.horiz ? { x0: -g.len / 2, x1: g.len / 2, y0: -K.LTW / 2, y1: K.LTW / 2 } : { x0: -K.LTW / 2, x1: K.LTW / 2, y0: -g.len / 2, y1: g.len / 2 };
+        tb.bb = bboxOf(tb);
+      } else if (tb.t.kind === 'sweet') {
+        var sw = sweetPlace(tb.seats);
+        tb.sw = sw.w;
+        tb.shapeBox = { x0: -sw.w / 2, x1: sw.w / 2, y0: 0, y1: sw.w / 2 };
+        tb.bb = bboxOf(tb);
+      } else usePick(tb);
+    });
+    /* Each round table takes whichever chair turn keeps it shortest, so the room stays compact */
+    rounds.concat(r72).forEach(function (tb) {
+      var bestI = 0, bestH = Infinity, bestW = Infinity;
+      tb.variants.forEach(function (v, i) {
+        var h = v.bb.y1 - v.bb.y0, w = v.bb.x1 - v.bb.x0;
+        if (h < bestH - 0.5 || (Math.abs(h - bestH) <= 0.5 && w < bestW)) { bestH = h; bestW = w; bestI = i; }
+      });
+      tb.pick = bestI; usePick(tb);
+    });
+    /* Units: tables pushed together end to end, like the plan */
+    var units = [];
+    COLS.forEach(function (col) {
+      col.U = col.units.map(function (members) {
+        var total = 0;
+        members.forEach(function (n) { var tb = tabs[n]; tb.h = tb.t.kind === 'long' ? tb.len : (tb.bb.y1 - tb.bb.y0); total += tb.t.kind === 'long' ? tb.len : 0; });
+        var u = { members: members, anchor: (T[members[0]].cy + T[members[members.length - 1]].cy) / 2 };
+        if (members.length > 1 || tabs[members[0]].t.kind === 'long') {
+          var y = -total / 2;
+          members.forEach(function (n) { var tb = tabs[n]; tb.oy = y + tb.len / 2; y += tb.len; });
+        } else tabs[members[0]].oy = 0;
+        var bb = { x0: 0, x1: 0, y0: 0, y1: 0 };
+        members.forEach(function (n) { var tb = tabs[n]; bb.x0 = Math.min(bb.x0, tb.bb.x0); bb.x1 = Math.max(bb.x1, tb.bb.x1); bb.y0 = Math.min(bb.y0, tb.oy + tb.bb.y0); bb.y1 = Math.max(bb.y1, tb.oy + tb.bb.y1); });
+        u.bb = bb;
+        units.push(u);
+        return u;
+      });
+      col.L = 0; col.R = 0;
+      col.U.forEach(function (u) { col.L = Math.max(col.L, -u.bb.x0); col.R = Math.max(col.R, u.bb.x1); });
+    });
+
+    /* Vertical: one scale for the whole hall, just enough for the busiest column; tables then settle as close to their plan spots as they can */
+    var span = PL.door - PL.top, sy = 3;
+    COLS.forEach(function (col) {
+      var need = 2 * MARGV + GAPV * (col.U.length - 1);
+      col.U.forEach(function (u) { need += u.bb.y1 - u.bb.y0; });
+      sy = Math.max(sy, need * 1.05 / span);
+    });
+    var sw29 = tabs[29];
+    sy = Math.max(sy, (-sw29.bb.y0 + MARGV) / (T[29].cy - PL.top), (sw29.bb.y1 + 14) / (PL.fy0 - T[29].cy));
+    function Yh(y) { return (y - PL.top) * sy; }
+    COLS.forEach(function (col) {
+      var U = col.U, lo = MARGV, hi = Yh(PL.door) - MARGV;
+      U.forEach(function (u) { u.y = Yh(u.anchor); });
+      for (var it = 0; it < 400; it++) {
+        var moved = false;
+        if (U[0].y + U[0].bb.y0 < lo - 0.01) { U[0].y = lo - U[0].bb.y0; moved = true; }
+        var L = U[U.length - 1];
+        if (L.y + L.bb.y1 > hi + 0.01) { L.y = hi - L.bb.y1; moved = true; }
+        for (var i = 1; i < U.length; i++) {
+          var a = U[i - 1], b = U[i], ov = (a.y + a.bb.y1 + GAPV) - (b.y + b.bb.y0);
+          if (ov > 0.01) { a.y -= ov / 2; b.y += ov / 2; moved = true; }
+        }
+        if (!moved) break;
+      }
+    });
+    /* Horizontal: columns packed left to right in the plan's order */
+    var colX = {}, x = 18;
+    var floorH = (PL.fy1 - PL.fy0) * sy, floorW = Math.max(210, Math.min(330, floorH * 15 / 24));
+    COLS.forEach(function (col, i) {
+      if (i === 3) { var fl = x - GAPX + GAPF; colX.fx0 = fl; colX.fx1 = fl + floorW; x = colX.fx1 + GAPF; }
+      colX[col.id] = x + col.L;
+      x = colX[col.id] + col.R + GAPX;
+    });
+    var hallR = x - GAPX + 20;
+    var XB = [[PL.dj, 0], [506.5, colX.A], [546.7, colX.B], [583.6, colX.C], [PL.fx0, colX.fx0], [PL.fx1, colX.fx1], [707.5, colX.D], [743.2, colX.E], [785.2, colX.F], [PL.right, hallR]];
+    function interp(bp, v) {
+      for (var i = 1; i < bp.length; i++) if (v <= bp[i][0]) { var a = bp[i - 1], b = bp[i]; return a[1] + (v - a[0]) / (b[0] - a[0]) * (b[1] - a[1]); }
+      var a2 = bp[bp.length - 2], b2 = bp[bp.length - 1];
+      return b2[1] + (v - b2[0]) * (b2[1] - a2[1]) / (b2[0] - a2[0]);
+    }
+
+    /* Place hall tables */
+    var place = {};
+    COLS.forEach(function (col) {
+      col.U.forEach(function (u) {
+        u.members.forEach(function (n) { place[n] = { x: colX[col.id], y: u.y + tabs[n].oy }; });
+      });
+    });
+    place[29] = { x: interp(XB, T[29].cx), y: Yh(T[29].cy) };
+
+    /* Lower row by the hangar doors: same order as the plan, nudged apart when names would touch */
+    var yDoor = Yh(PL.door);
+    var tallest = 0;
+    LOWER_LEFT.concat(LOWER_RIGHT).forEach(function (n) { tallest = Math.max(tallest, tabs[n].bb.y1 - tabs[n].bb.y0); });
+    var syl = (tallest + 2 * MARGV + 44) / (PL.rope - PL.door);
+    function Yl(y) { return yDoor + (y - PL.door) * syl; }
+    var yRope0 = Yl(PL.rope);
+    LOWER_LEFT.concat(LOWER_RIGHT).forEach(function (n) {
+      var tb = tabs[n], y = Yl(T[n].cy);
+      y = Math.max(y, yDoor + MARGV - tb.bb.y0);
+      y = Math.min(y, yRope0 - MARGV - tb.bb.y1);
+      place[n] = { x: interp(XB, T[n].cx), y: y };
+    });
+    function collide(a, b) {
+      var ra = occRects(tabs[a], place[a].x, place[a].y), rb = occRects(tabs[b], place[b].x, place[b].y);
+      for (var i = 0; i < ra.length; i++) for (var j = 0; j < rb.length; j++) if (hit(ra[i], rb[j], 8)) return true;
+      return false;
+    }
+    function sweep(list, dir) {
+      for (var i = 1; i < list.length; i++) {
+        var guard = 0;
+        while (guard++ < 400) {
+          var bad = false;
+          for (var j = 0; j < i; j++) if (collide(list[i], list[j])) { bad = true; break; }
+          if (!bad) break;
+          place[list[i]].x += 6 * dir;
+        }
+      }
+    }
+    sweep(LOWER_LEFT, 1);
+    sweep(LOWER_RIGHT, -1);
+    var g2 = 0;
+    while (collide(13, 14) && g2++ < 200) { place[13].x -= 3; place[14].x += 3; }
+    var leftMost = Infinity, rightMost = -Infinity;
+    LOWER_LEFT.concat(LOWER_RIGHT).forEach(function (n) { leftMost = Math.min(leftMost, place[n].x + tabs[n].bb.x0); rightMost = Math.max(rightMost, place[n].x + tabs[n].bb.x1); });
+    if (rightMost + 20 > hallR) { hallR = rightMost + 20; XB[XB.length - 1][1] = hallR; }
+    var yRope = Yl(PL.rope);
+
+    /* Full-venue maps: the hall is stretched to fit names; the lobby, patio and back rooms keep a steady scale */
+    var X401 = -(PL.dj - 401) * kDJ;
+    if (leftMost - 16 < 0) { var push = 0 - (leftMost - 16); X401 -= push; }
+    function X(x) {
+      if (x < 401) return X401 - (401 - x) * kL;
+      if (x < PL.dj) return X401 + (x - 401) / (PL.dj - 401) * (0 - X401);
+      if (x <= PL.right) return interp(XB, x);
+      return hallR + (x - PL.right) * kR;
+    }
+    var yDrapeOut = -(PL.top - PL.drapeOut) * kD;
+    function Y(y) {
+      if (y < PL.drapeOut) return yDrapeOut - (PL.drapeOut - y) * kT;
+      if (y < PL.top) return yDrapeOut + (y - PL.drapeOut) / (PL.top - PL.drapeOut) * (0 - yDrapeOut);
+      if (y <= PL.door) return Yh(y);
+      if (y <= PL.rope) return Yl(y);
+      return yRope + (y - PL.rope) * kP;
+    }
+    return { tabs: tabs, place: place, X: X, Y: Y, sy: sy, syl: syl, colX: colX, hallR: hallR, yDoor: yDoor, yRope: yRope, floorW: floorW };
+  }
+
+  /* ================= Drawing the venue ================= */
+  var STAR = 'M0 -3.2V3.2M-3.2 0H3.2M-2.3 -2.3L2.3 2.3M2.3 -2.3L-2.3 2.3M-1.2 -3L1.2 3M1.2 -3L-1.2 3M-3 -1.2L3 1.2M3 -1.2L-3 1.2';
+  function drawRoom(M) {
+    var X = M.X, Y = M.Y, o = [];
+    function P(x, y) { return f1(X(x)) + ',' + f1(Y(y)); }
+    function wall(pts, cls) { var p = pts.map(function (q) { return P(q[0], q[1]); }).join(' '); if (cls) { o.push('<polyline class="' + cls + '" points="' + p + '"/>'); return; } o.push('<polyline class="wall" points="' + p + '"/><polyline class="wall-in" points="' + p + '"/>'); }
+    function box(x0, y0, x1, y1, cls) { o.push('<rect class="' + cls + '" x="' + f1(X(x0)) + '" y="' + f1(Y(y0)) + '" width="' + f1(X(x1) - X(x0)) + '" height="' + f1(Y(y1) - Y(y0)) + '"/>'); }
+    function rig(x, y, inner, rot, sc) { o.push('<g transform="translate(' + f1(X(x)) + ',' + f1(Y(y)) + ') scale(' + (sc || LS) + ')' + (rot ? ' rotate(' + rot + ')' : '') + '">' + inner + '</g>'); }
+    function plantsAlong(x0, y0, x1, y1, step) {
+      var ax = X(x0), ay = Y(y0), bx = X(x1), by = Y(y1), d = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.round(d / (step || 30)));
+      for (var i = 0; i <= n; i++) { var t = n ? i / n : 0; o.push('<path class="plant" transform="translate(' + f1(ax + (bx - ax) * t) + ',' + f1(ay + (by - ay) * t) + ') scale(2.1)" d="' + STAR + '"/>'); }
+    }
+    function text(x, y, str, size, cls, anchor, rot, weight) {
+      var t = '<text class="' + (cls || 'lbl') + '" font-size="' + size + '" text-anchor="' + (anchor || 'middle') + '"' + (weight ? ' font-weight="' + weight + '"' : '') + '>';
+      var lines = String(str).split('\n');
+      lines.forEach(function (ln, i) { t += '<tspan x="0" y="' + f1(i * size * 1.12) + '">' + esc(ln) + '</tspan>'; });
+      t += '</text>';
+      rig(x, y, t, rot, 1);
+    }
+    function door(x, y, r, rot) { rig(x, y, '<path class="door" d="M0 0H' + r + 'A' + r + ' ' + r + ' 0 0 1 0 ' + r + 'Z" fill="none"/>', rot); }
+
+    /* Lobby and photo booth room */
+    wall([[415, 134], [181, 134], [181, 718]]);
+    wall([[364.5, 152], [198.7, 152], [198.7, 505.6]], 'thin');
+    box(364.5, 152, 415, 178.4, 'strip');
+    rig(389.7, 195.2, '<circle class="fx" r="5.3"/>');
+    wall([[412.3, 134], [412.3, 200]]);
+    door(413, 202.7, 20, 0);
+    box(400.8, 236, 412.3, 355.3, 'strip'); plantsAlong(406.5, 244, 406.5, 348, 34);
+    box(400.8, 395, 412.3, 412.7, 'strip'); plantsAlong(406.5, 399, 406.5, 409, 24);
+    box(400.8, 443.7, 421, 518.8, 'strip'); plantsAlong(406, 450, 406, 512, 30); plantsAlong(415.5, 450, 415.5, 512, 30);
+    box(181, 505.6, 421, 518.8, 'strip'); plantsAlong(210, 512, 395, 512, 30);
+    [177, 217, 252.7, 291, 328.7, 362.8, 397, 433.5, 469.3, 500.2].forEach(function (y) { rig(189.6, y, '<circle class="tree" r="8.6"/>'); });
+    rig(397.7, 166, '<circle class="tree" r="8.6"/>'); rig(402, 505.6, '<circle class="tree" r="8.6"/>');
+    o.push('<path class="thin" d="M' + P(219, 207) + ' Q' + P(300, 262) + ' ' + P(378, 214) + '"/><path class="thin" d="M' + P(226, 200) + ' Q' + P(300, 252) + ' ' + P(372, 207) + '"/>');
+    wall([[219, 178.4], [219, 273.5]], 'thin'); wall([[226.6, 178.4], [226.6, 273.5]], 'thin2');
+    wall([[372, 178.4], [372, 207]], 'thin'); wall([[378.5, 178.4], [378.5, 214]], 'thin2');
+    text(386.5, 272, 'SEATING\nCHART', 17, 'lbl', 'middle', 90);
+    box(386.6, 312.4, 396.8, 337.6, 'fx-pink');
+    text(371, 325, 'RECEPTION\nTABLE', 12, 'lbl', 'middle', 90);
+    rig(384.4, 390.5, '<path class="door" d="M-3 3L0 -4L3 3M0 -4V4M-4 -3L4 -3" />');
+    text(384.4, 405, 'WELCOME\nSIGN', 13, 'lbl', 'middle');
+    box(216.4, 489.2, 241.6, 499.8, 'fx-pink'); text(229, 499.5, 'DJ', 22, 'lbl', 'middle');
+    box(353.5, 489.2, 378.7, 499.8, 'fx-pink'); text(366, 474.5, 'BEV\nSTATION', 13, 'lbl', 'middle');
+    box(423.3, 492.3, 433.9, 510, 'fx-lime'); text(441, 496, 'WATER\nSTATION', 12, 'lbl', 'middle', 90);
+    wall([[198.7, 678], [377.8, 678], [408.7, 647], [408.7, 545.4]]);
+    wall([[377.8, 545.4], [422, 545.4]], 'thin');
+    door(183, 676, 16, 0);
+    box(207.6, 552.4, 233.2, 563, 'fx-pink'); text(197, 598, 'PHOTOBOOTH', 17, 'lbl', 'middle', -90);
+
+    /* Hall walls, drapery and stairs */
+    wall([[449.7, 134.8], [449.7, 218.8]], 'thin');
+    box(449.7, PL.drapeOut, 789, PL.drapeIn, 'strip'); plantsAlong(458, 225.4, 783, 225.4, 34);
+    box(789, 201, 829, PL.drapeIn, 'strip'); plantsAlong(796, 208, 822, 208, 20); plantsAlong(796, 223, 822, 223, 20);
+    box(829, PL.drapeOut, 893.9, PL.drapeIn, 'strip'); plantsAlong(836, 225.4, 888, 225.4, 30);
+    wall([[415, 351], [PL.dj, 351], [PL.dj, 241.5]], 'thin');
+    wall([[PL.right, PL.drapeIn], [PL.right, PL.door]]);
+    o.push('<line class="thin2" x1="' + f1(X(412.3)) + '" y1="' + f1(Y(PL.door) - 3) + '" x2="' + f1(X(840)) + '" y2="' + f1(Y(PL.door) - 3) + '"/><line class="thin2" x1="' + f1(X(412.3)) + '" y1="' + f1(Y(PL.door) + 3) + '" x2="' + f1(X(840)) + '" y2="' + f1(Y(PL.door) + 3) + '"/>');
+    var sx0 = X(491), sx1 = Math.min(X(545), M.colX.B - 60), sy0 = Y(PL.top) + 6, sy1 = Y(PL.top) + 32, st = '<rect class="fx" x="' + f1(sx0) + '" y="' + f1(sy0) + '" width="' + f1(sx1 - sx0) + '" height="' + f1(sy1 - sy0) + '"/>';
+    for (var r = 1; r < 14; r++) { var rx = sx0 + (sx1 - sx0) * r / 14; st += '<line class="thin2" x1="' + f1(rx) + '" y1="' + f1(sy0) + '" x2="' + f1(rx) + '" y2="' + f1(sy1) + '"/>'; }
+    o.push(st);
+    o.push('<g transform="translate(' + f1(sx0 + 12) + ',' + f1((sy0 + sy1) / 2) + ') scale(' + LS + ')"><path d="M-3 0L3 -3.2V3.2Z" fill="#8a8a8a"/></g>');
+    o.push('<rect x="' + f1(sx1 - 14) + '" y="' + f1((sy0 + sy1) / 2 - 5) + '" width="10" height="10" fill="#555"/>');
+    box(475, 270, 487, 298, 'fx-pink'); text(481, 290, 'DJ', 24, 'lbl', 'middle');
+    rig(626.3, 246.8, '<circle class="fx-lime" r="5"/>'); text(626.3, 262, 'CAKE', 13, 'lbl', 'middle');
+    box(PL.fx0, PL.fy0, PL.fx1, PL.fy1, 'floor');
+    text((PL.fx0 + PL.fx1) / 2, (PL.fy0 + PL.fy1) / 2 + 2, '15′ × 24′', 34, 'lbl', 'middle');
+
+    /* Legend and notes */
+    rig(488, 160, '<circle class="fx-lime" cx="0.6" cy="-30.5" r="5.3"/><circle class="fx" cx="-0.3" cy="-4" r="11"/><circle class="fx-cyan" cx="0.6" cy="29.2" r="12.4"/>' +
+      '<text class="lbl" font-size="8" x="20" y="-27.5">=30" round</text><text class="lbl" font-size="8" x="20" y="-1">=60" round</text><text class="lbl" font-size="8" x="22" y="32">=72" round</text>');
+    rig(730, 153, '<rect class="fx-lime" x="-6.2" y="-32.4" width="17.7" height="9.8"/><rect class="fx-pink" x="-13.3" y="-3.6" width="26.1" height="11"/><rect class="fx-yellow" x="-20.3" y="22.9" width="34" height="10.6"/>' +
+      '<text class="lbl" font-size="8" x="24" y="-25">=4\' rectangle</text><text class="lbl" font-size="8" x="24" y="4.5">=6\' rectangle</text><text class="lbl" font-size="8" x="24" y="31">=8\' rectangle</text>');
+    text(623, 205, 'drapery (entire wall)', 24, 'lbl-red', 'middle');
+    o.push('<g transform="translate(' + f1((M.colX.fx0 + M.colX.fx1) / 2) + ',' + f1(M.yRope - 52) + ')"><text class="lbl-red" font-size="16" text-anchor="middle"><tspan x="0" y="0">REMOVE ROPE &amp; STANCHIONS</tspan><tspan x="0" y="18">AT 5:45 PM IN WITH HANGAR</tspan><tspan x="0" y="36">GATES OPENING.</tspan></text></g>');
+
+    /* Patio past the rope */
+    var rx0 = X(486.2), rx1 = X(804.5), ry = Y(PL.rope);
+    o.push('<rect class="rope" x="' + f1(rx0) + '" y="' + f1(ry - 3) + '" width="' + f1(rx1 - rx0) + '" height="6" rx="2"/>');
+    [486.2, 804.5].forEach(function (x) { rig(x, PL.rope, '<rect class="fx-gray" x="-4.5" y="-4.5" width="9" height="9"/><circle class="fx" r="2"/>'); });
+    [[460.6, 482.3], [798.8, 490.7], [639.6, 554.8], [310.6, 562.2]].forEach(function (p) { rig(p[0], p[1], '<circle class="fx" r="4"/><text class="lbl" font-size="4.2" y="1.5" text-anchor="middle">H</text>'); });
+    var cluster = '<circle class="fx" r="4.6"/>';
+    [45, 135, 225, 315].forEach(function (a) { cluster += '<rect class="fx" x="-2.4" y="-9.6" width="4.8" height="3.8" rx="1.3" transform="rotate(' + a + ')"/>'; });
+    [[643.2, 485.4], [606.5, 518.5], [676.3, 516.3], [278.3, 589.6], [346.8, 591.8], [312.4, 632.9]].forEach(function (p) { rig(p[0], p[1], cluster); });
+    function bar(cx, cy, ow, oh, iw) { return '<path class="fx" d="M' + (-ow / 2) + ' ' + (oh / 2) + 'V' + (-oh / 2) + 'H' + (ow / 2) + 'V' + (oh / 2) + 'H' + (iw / 2) + 'V' + (-oh / 2 + 10.6) + 'H' + (-iw / 2) + 'V' + (oh / 2) + 'Z"/>'; }
+    rig(537.5, 603.2, bar(0, 0, 98.2, 25.2, 76.5) + '<text class="lbl" font-size="11" y="10" text-anchor="middle">BAR</text>');
+    rig(736.9, 600.1, bar(0, 0, 98.1, 25.2, 76.4) + '<text class="lbl" font-size="11" y="10" text-anchor="middle">BAR</text>');
+    rig(535, 641.3, '<rect class="fx-yellow" x="-17" y="-5.3" width="34" height="10.6"/>');
+    rig(738, 643.6, '<rect class="fx-yellow" x="-17" y="-5.3" width="34" height="10.6"/>');
+    rig(639.2, 595, '<rect class="fx" x="-11" y="-4.4" width="22" height="8.8"/><rect class="fx" x="-9" y="-2.6" width="18" height="5.2"/>' +
+      '<text class="lbl" font-size="10" x="-15" y="13">ice cream</text><text class="lbl" font-size="10" x="-15" y="24">cart</text>');
+    var gx0 = X(438), gx1 = X(875), gy0 = Y(662.6), gy1 = Y(670.2), gw = (gx1 - gx0) / 13;
+    for (var gi = 0; gi < 13; gi++) o.push('<rect class="fx-green" x="' + f1(gx0 + gi * gw + gw * .06) + '" y="' + f1(gy0) + '" width="' + f1(gw * .86) + '" height="' + f1(gy1 - gy0) + '"/>');
+
+    /* Back rooms, restrooms and the courtyard */
+    wall([[807.7, 235.9], [1002.2, 235.9]], 'thin');
+    wall([[807.7, 280.1], [887.3, 280.1], [887.3, 235.9]], 'thin');
+    wall([[920.4, 235.9], [920.4, 280.1], [1002.2, 280.1]], 'thin');
+    wall([[887.3, 260.2], [920.4, 260.2]], 'thin');
+    door(876, 264.6, 11, 0); door(931, 264.6, 11, 90);
+    [[847.5, 258], [961.3, 258]].forEach(function (p, i) { rig(p[0], p[1], '<rect class="fx-gray" x="-5" y="-5" width="10" height="10" rx="1.5"/><circle cx="0" cy="-2.2" r="1.1" fill="#fff"/><path d="' + (i ? 'M-1.3 -.6H1.3V3.4H-1.3Z' : 'M0 -.6L1.8 3.4H-1.8Z') + '" fill="#fff"/>'); });
+    wall([[807.7, 306.6], [1002.2, 306.6], [1002.2, 401.7]], 'thin');
+    box(836.4, 306.6, 889.5, 317.7, 'fx');
+    rig(833.3, 312.4, '<circle class="fx" r="3"/>'); rig(896.1, 316.8, '<rect class="fx" x="-1.6" y="-1.6" width="3.2" height="3.2"/>');
+    (function () {
+      var a = [911.6, 306.6], b = [975.7, 344.2], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), nx = -dy / L * 6.5, ny = dx / L * 6.5;
+      var pts = [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]];
+      o.push('<polygon class="fx" points="' + pts.map(function (p) { return P(p[0], p[1]); }).join(' ') + '"/>');
+    })();
+    wall([[911.6, 306.6], [865.2, 401.7]], 'thin'); wall([[924.8, 328.7], [924.8, 401.7]], 'thin');
+    door(818.7, 284.5, 12, 0); door(829.8, 317.7, 12, 0); door(1006.6, 306.6, 13, 90);
+    box(1006.6, 231.5, 1015.5, 300, 'strip'); plantsAlong(1011, 238, 1011, 294, 32);
+    box(1006.6, 335, 1015.5, 373, 'strip'); plantsAlong(1011, 341, 1011, 368, 32);
+    wall([[893.9, 200.5], [893.9, 103.3], [977.9, 103.3]], 'thin'); wall([[860.7, 200.5], [893.9, 200.5]], 'thin');
+    wall([[1004.4, 103.3], [1015.5, 103.3], [1015.5, 127.6]], 'thin');
+    box(917.3, 121, 927, 231.5, 'strip'); plantsAlong(922, 128, 922, 226, 32);
+    box(917.3, 116, 973.5, 125, 'strip'); plantsAlong(930, 120.5, 968, 120.5, 28);
+    box(927, 222.6, 1006.6, 231.5, 'strip'); plantsAlong(934, 227, 1000, 227, 30);
+    rig(940.3, 140.8, '<path class="bigplant" d="M0 -9L2 -2L9 0L2 2L0 9L-2 2L-9 0L-2 -2Z"/><path class="plant" d="' + STAR + '" transform="scale(2)"/>');
+    rig(1037.6, 140.8, '<path class="bigplant" d="M0 -9L2 -2L9 0L2 2L0 9L-2 2L-9 0L-2 -2Z"/><path class="plant" d="' + STAR + '" transform="scale(2)"/>');
+    door(980.5, 127.6, 12, 0); door(1006, 127.6, 12, 90);
+    wall([[1008.8, 401.7], [1008.8, 505.6], [922.6, 505.6], [922.6, 487.9]], 'thin');
+    wall([[953.6, 410.5], [997.8, 410.5], [997.8, 452.5], [953.6, 452.5], [953.6, 410.5]], 'thin');
+    wall([[832, 410.5], [832, 461.4]], 'thin'); wall([[854.1, 443.7], [854.1, 483.5], [832, 483.5]], 'thin');
+    wall([[834.2, 492.3], [868.7, 492.3], [868.7, 534.3], [834.2, 534.3], [834.2, 492.3]], 'thin');
+    door(838.6, 401.7, 12, 0); door(855, 520, 11, 180);
+    return o.join('');
+  }
+
+  /* ================= Drawing tables, chairs and names ================= */
+  function drawTables(M) {
+    var tl = [], sl = [];
+    TABLES.forEach(function (n) {
+      var tb = M.tabs[n], p = M.place[n], t = tb.t;
+      var over = tb.seats.some(function (s) { return s.state === 'over'; });
+      var bb = tb.bb;
+      var g = '<g class="tbl' + (over ? ' over' : '') + '" data-t="' + n + '" transform="translate(' + f1(p.x) + ',' + f1(p.y) + ')">';
+      g += '<rect class="thit" x="' + f1(bb.x0 - 6) + '" y="' + f1(bb.y0 - 6) + '" width="' + f1(bb.x1 - bb.x0 + 12) + '" height="' + f1(bb.y1 - bb.y0 + 12) + '"/>';
+      var numSize = 26;
+      if (t.kind === 'long') g += '<rect class="tshape" x="' + (-K.LTW / 2) + '" y="' + f1(-tb.len / 2) + '" width="' + K.LTW + '" height="' + f1(tb.len) + '"/>';
+      else if (t.kind === 'longh') g += '<rect class="tshape" x="' + f1(-tb.len / 2) + '" y="' + (-K.LTW / 2) + '" width="' + f1(tb.len) + '" height="' + K.LTW + '"/>';
+      else if (t.kind === 'sweet') { var r = tb.sw / 2; g += '<path class="tshape" d="M' + f1(-r) + ' 0H' + f1(r) + 'A' + f1(r) + ' ' + f1(r) + ' 0 0 1 ' + f1(-r) + ' 0Z"/>'; numSize = 17; }
+      else { g += '<circle class="tshape' + (t.kind === 'round72' ? ' c72' : '') + '" r="' + tb.R + '"/>'; numSize = 30; }
+      var ny = t.kind === 'sweet' ? tb.sw / 4 + numSize * 0.36 : numSize * 0.36;
+      g += '<text class="tnum" y="' + f1(ny) + '" font-size="' + numSize + '">' + n + '</text></g>';
+      tl.push(g);
+
+      var s2 = '<g transform="translate(' + f1(p.x) + ',' + f1(p.y) + ')">';
+      tb.seats.forEach(function (s) {
+        var r2 = rectOfLabel(s), c = chairRect(s);
+        var hx0 = Math.min(r2.x0, c.x0) - 3, hx1 = Math.max(r2.x1, c.x1) + 3, hy0 = Math.min(r2.y0, c.y0) - 3, hy1 = Math.max(r2.y1, c.y1) + 3;
+        var attrs = ' data-t="' + n + '" data-k="' + s.k + '"' + (s.guest ? ' data-gid="' + esc(s.guest.id) + '"' : '');
+        s2 += '<g class="seat ' + s.state + '"' + attrs + '>';
+        s2 += '<rect class="shit" x="' + f1(hx0) + '" y="' + f1(hy0) + '" width="' + f1(hx1 - hx0) + '" height="' + f1(hy1 - hy0) + '"/>';
+        s2 += '<rect class="hl" x="' + f1(r2.x0 - 3) + '" y="' + f1(r2.y0 - 2) + '" width="' + f1(r2.x1 - r2.x0 + 6) + '" height="' + f1(r2.y1 - r2.y0 + 4) + '" rx="4"/>';
+        s2 += '<rect class="chair" x="' + (-K.CW / 2) + '" y="' + (-K.CD / 2) + '" width="' + K.CW + '" height="' + K.CD + '" rx="3.5" transform="translate(' + f1(s.cx) + ',' + f1(s.cy) + ') rotate(' + f1(s.rot) + ')"/>';
+        var anchor = s.align === 'middle' ? 'middle' : s.align === 'end' ? 'end' : 'start';
+        var lab = s.lab;
+        if (lab.lines.length === 1) {
+          s2 += '<text class="' + lab.cls[0] + '" x="' + f1(s.lx) + '" y="' + f1(s.top + 11) + '" text-anchor="' + anchor + '"' + squeeze(lab.w, lab.ws ? lab.ws[0] : lab.w) + '>' + esc(lab.lines[0]) + '</text>';
+        } else {
+          s2 += '<text class="n1" x="' + f1(s.lx) + '" y="' + f1(s.top + 11) + '" text-anchor="' + anchor + '"' + squeeze(lab.w, lab.ws[0]) + '>' + esc(lab.lines[0]) + '</text>';
+          s2 += '<text class="n2" x="' + f1(s.lx) + '" y="' + f1(s.top + 24) + '" text-anchor="' + anchor + '"' + squeeze(lab.w, lab.ws[1]) + '>' + esc(lab.lines[1]) + '</text>';
+        }
+        s2 += '</g>';
+      });
+      s2 += '</g>';
+      sl.push(s2);
+    });
+    return { tables: tl.join(''), seats: sl.join('') };
+  }
+  function squeeze(max, w) { return w > max + 0.5 ? ' textLength="' + f1(max) + '" lengthAdjust="spacingAndGlyphs"' : ''; }
+
+  /* ================= Paper, footer ================= */
+  function drawSheet(M) {
+    var x0 = M.X(172), x1 = M.X(1050), y0 = M.Y(92), y1 = M.Y(728) + 120;
+    M.bounds = { x0: x0, y0: y0, x1: x1, y1: y1 };
+    var s = '<rect class="sheet-shadow" x="' + f1(x0 + 6) + '" y="' + f1(y0 + 8) + '" width="' + f1(x1 - x0) + '" height="' + f1(y1 - y0) + '" rx="3"/>' +
+      '<rect class="sheet" x="' + f1(x0) + '" y="' + f1(y0) + '" width="' + f1(x1 - x0) + '" height="' + f1(y1 - y0) + '" rx="3"/>';
+    var fx = x0 + 60, fy = y1 - 88;
+    s += '<line x1="' + f1(x0 + 30) + '" y1="' + f1(fy - 34) + '" x2="' + f1(x1 - 30) + '" y2="' + f1(fy - 34) + '" stroke="#cfcfcf" stroke-width="1.5"/>';
+    var mt = S.meta || {};
+    s += '<text class="foot-t" x="' + f1(fx) + '" y="' + f1(fy) + '" font-size="24">' + esc(mt.foot1 || '') + '</text>';
+    s += '<text class="foot-t" x="' + f1(fx) + '" y="' + f1(fy + 32) + '" font-size="24">' + esc(mt.foot2 || '') + '</text>';
+    s += '<text class="foot-t" x="' + f1(fx) + '" y="' + f1(fy + 64) + '" font-size="24">' + esc(mt.foot3 || '') + '</text>';
+    return s;
+  }
+
+  /* ================= Render ================= */
+  var seatEls = new Map(), tblEls = new Map();
+  var planSig = '';
+  function renderPlan() {
+    derive();
+    if (S.failed === 'nokey' || S.failed === 'badkey') { gateMsg(); return; }
+    if (!S.fontsReady || (!S.failed && !(S.loadedG && S.loadedT))) return;
+    var sig = JSON.stringify(TABLES.map(function (n) { return [seatsOf(n), at(n).map(function (g) { return [g.id, g.name, g.order]; })]; }));
+    if (sig === planSig && S.lay) return;
+    planSig = sig;
+    var M = layout();
+    var sheet = drawSheet(M), room = drawRoom(M), tb = drawTables(M);
+    $('#sheet').innerHTML = sheet;
+    $('#room').innerHTML = room;
+    $('#tblLayer').innerHTML = tb.tables;
+    $('#seatLayer').innerHTML = tb.seats;
+    S.lay = M;
+    seatEls.clear(); tblEls.clear();
+    document.querySelectorAll('#seatLayer .seat[data-gid]').forEach(function (e) { seatEls.set(e.getAttribute('data-gid'), e); });
+    document.querySelectorAll('#tblLayer .tbl').forEach(function (e) { tblEls.set(+e.getAttribute('data-t'), e); });
+    $('#loading').hidden = true;
+    renderSrList();
+    if (!S.userView) fitView(false);
+    S.fitted = true;
+    renderMarks();
+  }
+  function renderMarks() {
+    var selG = S.sel ? S.guests.get(S.sel) : null;
+    seatEls.forEach(function (e, gid) {
+      var g = S.guests.get(gid);
+      e.classList.toggle('sel', gid === S.sel);
+      e.classList.toggle('hit', !!g && isHit(g.name));
+      e.classList.toggle('flash', gid === S.flash);
+    });
+    tblEls.forEach(function (e, n) { e.classList.toggle('cur', !!selG && selG.table === n); });
+    document.body.classList.toggle('moving', !!S.sel);
+    document.body.classList.toggle('readonly', S.canWrite === false || !!S.failed);
+  }
+  function renderAll() {
+    renderPlan();
+    renderMarks();
+    renderStats();
+    renderBanner();
+    renderUnseated();
+    renderMoveBar();
+    renderResults();
+    renderUndo();
+    renderPanel();
+    renderChanges();
+  }
+  var raf = 0;
+  function scheduleRender() { if (!raf) raf = requestAnimationFrame(function () { raf = 0; renderAll(); }); }
+
+  function renderSrList() {
+    var h = '<h2>Seating by table</h2>';
+    TABLES.forEach(function (n) {
+      var m = seatMap(n);
+      var names = m.chairs.filter(Boolean).concat(m.over).map(function (g) { return esc(g.name); });
+      h += '<h3>' + PlaceName(n) + ', ' + seatsOf(n) + ' seats</h3><p>' + (names.length ? names.join(', ') : 'No one yet') + '</p>';
+    });
+    $('#sr-list').innerHTML = h;
+  }
+
+  function renderStats() {
+    var st = $('#stats');
+    if (S.failed || !S.loadedG) { st.innerHTML = ''; return; }
+    var seated = 0, open = 0, over = [];
+    TABLES.forEach(function (n) { var c = at(n).length, s = seatsOf(n); seated += c; if (s > c) open += s - c; if (c > s) over.push(n); });
+    var uns = at(0).length;
+    var h = '<span class="chip"><b>' + seated + '</b>&nbsp;seated &middot; <b>' + open + '</b>&nbsp;open seat' + (open === 1 ? '' : 's') + '</span>';
+    if (uns) h += '<span class="chip attn"><b>' + uns + '</b> not seated yet</span>';
+    if (over.length) h += '<button type="button" class="chip warn" data-goto="' + over[0] + '"><b>' + over.length + '</b><span class="long">&nbsp;table' + (over.length > 1 ? 's have' : ' has') + ' more names than chairs</span><span class="short">&nbsp;over</span></button>';
+    st.innerHTML = h;
+  }
+  function renderBanner() {
+    var msg = '';
+    if (S.failed === 'error') msg = 'The chart stopped updating. Reload the page to reconnect.';
+    else if (S.netDown && S.pending) msg = 'No connection right now. Your last change saves as soon as you’re back online, so keep this page open.';
+    else if (S.netDown && !S.loadedG) msg = 'Can’t reach the seating chart right now. It keeps trying on its own.';
+    else if (S.netDown) msg = 'No connection right now. The chart catches up when you’re back online.';
+    var b = $('#banner');
+    b.hidden = !msg;
+    if (b.textContent !== msg) b.textContent = msg;
+  }
+  function gateMsg() {
+    var el = $('#loading');
+    el.hidden = false;
+    el.classList.add('gate');
+    var html = S.failed === 'nokey'
+      ? '<div class="gate-card"><strong>Open this chart from the link you were sent.</strong><span>The link has a code at the end that lets you in. Ask whoever sent it to text it to you again.</span></div>'
+      : '<div class="gate-card"><strong>This link doesn’t work anymore.</strong><span>Ask whoever sent it for the newest link.</span></div>';
+    if (el.innerHTML !== html) el.innerHTML = html;
+    $('#hint').hidden = true;
+  }
+  function renderUnseated() {
+    var box = $('#unseated'), gs = at(0);
+    box.hidden = !(S.loadedG && gs.length);
+    if (box.hidden) return;
+    $('#uns-count').textContent = gs.length;
+    box.querySelector('p').hidden = !canEdit();
+    $('#uns-list').innerHTML = gs.map(function (g) { return '<li><button type="button" class="pchip' + (g.id === S.sel ? ' sel' : '') + '" data-pick="' + esc(g.id) + '">' + esc(g.name) + '</button></li>'; }).join('');
+  }
+  function renderMoveBar() {
+    var mb = $('#movebar'), g = S.sel ? S.guests.get(S.sel) : null;
+    if (!g) { if (!mb.hidden) { mb.hidden = true; setMbH(); } return; }
+    var wasHidden = mb.hidden;
+    mb.hidden = false;
+    $('#mb-name').textContent = g.name;
+    $('#mb-from').textContent = 'from ' + placeName(g.table);
+    $('#mb-hint').textContent = fineMQ.matches ? 'Click the table on the plan where they should sit, or a green open seat.' : 'Tap the table on the plan, or pick its number below.';
+    $('#mb-takeoff').hidden = !g.table;
+    $('#mb-delete').hidden = !!g.table;
+    var html = '';
+    TABLES.forEach(function (n) {
+      if (n === 29) return;
+      var o = openCount(n), here = g.table === n;
+      html += '<button type="button" class="' + (here ? 'here' : o > 0 ? 'open' : 'full') + '" data-to="' + n + '"' + (here ? ' disabled' : '') + ' aria-label="' + PlaceName(n) + (here ? ', here now' : o > 0 ? ', ' + o + ' open' : ', full') + '"><span class="n">' + n + '</span><span class="s">' + (here ? 'here' : o > 0 ? o + ' open' : 'full') + '</span></button>';
+    });
+    var grid = $('#mb-grid');
+    if (grid.innerHTML !== html) grid.innerHTML = html;
+    setMbH();
+    if (wasHidden) setTimeout(setMbH, 60);
+  }
+  function setMbH() { var mb = $('#movebar'); document.documentElement.style.setProperty('--mb-h', (mb.hidden ? 0 : Math.ceil(mb.getBoundingClientRect().height)) + 'px'); }
+
+  function searchItems() {
+    var q = S.qn, out = [];
+    if (!q) return out;
+    var tm = q.replace(/^table\s*/, '');
+    if (/^\d{1,2}$/.test(tm)) { var n = +tm; if (n >= 1 && n <= 29) out.push({ kind: 't', n: n, label: PlaceName(n), where: at(n).length + ' of ' + seatsOf(n) + ' seats' }); }
+    var hits = [];
+    S.guests.forEach(function (g) {
+      var nn = norm(g.name), i = nn.indexOf(q);
+      if (i === -1) return;
+      hits.push({ g: g, rank: (i === 0 || nn.charAt(i - 1) === ' ' || nn.charAt(i - 1) === '-') ? 0 : 1 });
+    });
+    hits.sort(function (a, b) { return (a.rank - b.rank) || a.g.name.localeCompare(b.g.name); });
+    hits.slice(0, 8).forEach(function (h) { out.push({ kind: 'g', g: h.g, label: h.g.name, where: PlaceName(h.g.table) }); });
+    return out;
+  }
+  function renderResults() {
+    var box = $('#results'), inp = $('#q');
+    $('#q-clear').hidden = !S.q;
+    if (!S.resOpen || !S.qn) { box.hidden = true; inp.setAttribute('aria-expanded', 'false'); inp.removeAttribute('aria-activedescendant'); return; }
+    var items = searchItems();
+    S.items = items;
+    if (S.resIdx >= items.length) S.resIdx = Math.max(0, items.length - 1);
+    box.innerHTML = items.length ? items.map(function (it, i) {
+      return '<button type="button" role="option" id="res-' + i + '" class="res' + (i === S.resIdx ? ' active' : '') + '" data-res="' + i + '" aria-selected="' + (i === S.resIdx) + '"><span class="rn">' + esc(it.label) + '</span><span class="rw">' + esc(it.where) + '</span></button>';
+    }).join('') : '<p class="nores">No one matches “' + esc(S.q.trim()) + '”. Check the spelling, or use Add guest.</p>';
+    box.hidden = false;
+    inp.setAttribute('aria-expanded', 'true');
+    if (items.length) inp.setAttribute('aria-activedescendant', 'res-' + S.resIdx); else inp.removeAttribute('aria-activedescendant');
+  }
+  function renderUndo() {
+    var b = $('#btn-undo'), u = S.undo[S.undo.length - 1];
+    b.disabled = !u || !canEdit();
+    b.title = u ? 'Undo: ' + u.label : 'Nothing to undo yet';
+    $('#btn-add').hidden = !canEdit();
+  }
+
+  /* ================= Table panel ================= */
+  function openPanel(ctx) { S.panel = ctx; renderPanel(); }
+  function closePanel() { if (!S.panel) return; S.panel = null; renderPanel(); }
+  function renderPanel() {
+    var p = $('#panel'), ctx = S.panel;
+    if (!ctx || S.sel) { p.hidden = true; return; }
+    var n = ctx.t, seats = seatsOf(n), people = at(n).length, open = Math.max(0, seats - people), ed = canEdit();
+    var acts = '';
+    if (ctx.k) {
+      $('#panel-h').textContent = 'Open seat at ' + placeName(n);
+      $('#panel-sub').textContent = KIND_NAME[T[n].kind] + ' · ' + people + ' of ' + seats + ' seats taken';
+      if (ed) acts = '<button type="button" class="btn primary" data-act="add-here">Add a guest here</button><button type="button" class="btn" data-act="rm-this">Remove this seat</button>';
+    } else {
+      $('#panel-h').textContent = PlaceName(n);
+      $('#panel-sub').textContent = KIND_NAME[T[n].kind] + ' · ' + people + (people === 1 ? ' guest' : ' guests') + ' · ' + seats + ' seats' + (people > seats ? ' · ' + (people - seats) + ' more names than chairs' : open ? ' · ' + open + ' open' : ' · full');
+      if (ed) acts = '<button type="button" class="btn" data-act="add-seat">+ Add a seat</button><button type="button" class="btn" data-act="rm-seat"' + (open ? '' : ' disabled') + '>&minus; Remove an empty seat</button><button type="button" class="btn primary" data-act="add-guest">Add a guest</button>';
+    }
+    $('#panel-acts').innerHTML = acts;
+    p.hidden = false;
+  }
+  $('#panel-close').addEventListener('click', closePanel);
+  $('#panel-acts').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (!b || !S.panel) return;
+    var ctx = S.panel, a = b.dataset.act;
+    if (a === 'add-seat') changeSeats(ctx.t, 1);
+    else if (a === 'rm-seat') removeEmptySeat(ctx.t);
+    else if (a === 'add-guest') { openAdd(ctx.t, null); }
+    else if (a === 'add-here') { openAdd(ctx.t, ctx.k); }
+    else if (a === 'rm-this') { var t = ctx.t, k = ctx.k; closePanel(); removeSeatAt(t, k); }
+  });
+
+  /* ================= Pan and zoom ================= */
+  var svg = $('#svg'), world = $('#world'), stage = $('#stage');
+  var view = { k: 1, x: 0, y: 0 };
+  var KMIN = 0.05, KMAX = 4;
+  function applyView() { world.setAttribute('transform', 'translate(' + f1(view.x) + ',' + f1(view.y) + ') scale(' + view.k.toFixed(4) + ')'); }
+  function stageSize() { return { w: stage.clientWidth, h: stage.clientHeight }; }
+  function tablesBox() {
+    var M = S.lay;
+    if (!M) return null;
+    var b = { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    TABLES.forEach(function (n) { var tb = M.tabs[n], p = M.place[n]; b.x0 = Math.min(b.x0, p.x + tb.bb.x0); b.x1 = Math.max(b.x1, p.x + tb.bb.x1); b.y0 = Math.min(b.y0, p.y + tb.bb.y0); b.y1 = Math.max(b.y1, p.y + tb.bb.y1); });
+    b.y0 = Math.min(b.y0, M.Y(205) - 20);
+    return b;
+  }
+  function viewFor(b, pad) {
+    var s = stageSize(), bw = b.x1 - b.x0, bh = b.y1 - b.y0;
+    var k = Math.min((s.w - pad * 2) / bw, (s.h - pad * 2) / bh);
+    k = Math.max(KMIN, Math.min(KMAX, k));
+    return { k: k, x: s.w / 2 - (b.x0 + bw / 2) * k, y: s.h / 2 - (b.y0 + bh / 2) * k };
+  }
+  function animateTo(v) {
+    if (motionMQ.matches) { view = v; applyView(); return; }
+    var from = { k: view.k, x: view.x, y: view.y }, t0 = performance.now(), dur = 380;
+    cancelAnimationFrame(animateTo.raf);
+    (function step(now) {
+      var t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+      view = { k: from.k + (v.k - from.k) * e, x: from.x + (v.x - from.x) * e, y: from.y + (v.y - from.y) * e };
+      applyView();
+      if (t < 1) animateTo.raf = requestAnimationFrame(step);
+    })(t0);
+  }
+  function fitView(animate) {
+    var b = tablesBox();
+    if (!b) return;
+    var s = stageSize(), v;
+    if (s.h > s.w * 1.05) {
+      var k = Math.max(KMIN, Math.min(KMAX, (s.h - 150) / (b.y1 - b.y0)));
+      var cx = S.lay.colX.fx0 + S.lay.floorW / 2;
+      v = { k: k, x: s.w / 2 - cx * k, y: s.h / 2 - ((b.y0 + b.y1) / 2) * k + 10 };
+    } else v = viewFor(b, 24);
+    if (animate) animateTo(v); else { view = v; applyView(); }
+  }
+  function zoomAt(sx, sy, f) {
+    S.userView = true;
+    var k2 = Math.max(KMIN, Math.min(KMAX, view.k * f));
+    var wx = (sx - view.x) / view.k, wy = (sy - view.y) / view.k;
+    view = { k: k2, x: sx - wx * k2, y: sy - wy * k2 };
+    applyView();
+  }
+  function zoomCenter(f) { S.userView = true; var s = stageSize(); var k2 = Math.max(KMIN, Math.min(KMAX, view.k * f)); var wx = (s.w / 2 - view.x) / view.k, wy = (s.h / 2 - view.y) / view.k; animateTo({ k: k2, x: s.w / 2 - wx * k2, y: s.h / 2 - wy * k2 }); }
+  $('#z-in').addEventListener('click', function () { zoomCenter(1.4); });
+  $('#z-out').addEventListener('click', function () { zoomCenter(1 / 1.4); });
+  $('#z-fit').addEventListener('click', function () { S.userView = false; fitView(true); });
+  function flyToTable(n, minK) {
+    var M = S.lay;
+    S.userView = true;
+    if (!M) return;
+    var tb = M.tabs[n], p = M.place[n], s = stageSize();
+    var b = { x0: p.x + tb.bb.x0, x1: p.x + tb.bb.x1, y0: p.y + tb.bb.y0, y1: p.y + tb.bb.y1 };
+    var v = viewFor(b, Math.min(90, s.w * 0.12));
+    v.k = Math.max(minK || 0, Math.min(v.k, 1.5));
+    var cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    var bottomPad = S.panel || S.sel ? 90 : 0;
+    animateTo({ k: v.k, x: s.w / 2 - cx * v.k, y: (s.h - bottomPad) / 2 - cy * v.k });
+  }
+  function flyToGuest(gid) {
+    var g = S.guests.get(gid);
+    if (!g) return;
+    if (!g.table) { var u = $('#unseated'); if (u && !u.hidden) u.scrollIntoView({ block: 'nearest' }); flashGuest(gid); return; }
+    flyToTable(g.table, 1.2);
+    flashGuest(gid);
+  }
+
+  var pointers = new Map(), gesture = null, lastTap = { t: 0, x: 0, y: 0 };
+  function rel(e) { var r = svg.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  svg.addEventListener('pointerdown', function (e) {
+    if (e.button !== undefined && e.button > 0) return;
+    var p = rel(e);
+    pointers.set(e.pointerId, p);
+    try { svg.setPointerCapture(e.pointerId); } catch (err) {}
+    if (pointers.size === 1) gesture = { type: 'tap', start: p, view: { k: view.k, x: view.x, y: view.y }, target: e.target, moved: false };
+    else if (pointers.size === 2) {
+      var pts = Array.from(pointers.values());
+      gesture = { type: 'pinch', d0: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), m0: { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }, view: { k: view.k, x: view.x, y: view.y } };
+    }
+    cancelAnimationFrame(animateTo.raf);
+  });
+  svg.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) {
+      if (e.pointerType === 'mouse') hoverTable(e.target);
+      return;
+    }
+    var p = rel(e);
+    pointers.set(e.pointerId, p);
+    if (!gesture) return;
+    if (gesture.type === 'pinch' && pointers.size >= 2) {
+      var pts = Array.from(pointers.values());
+      var d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), m = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+      S.userView = true;
+      var k2 = Math.max(KMIN, Math.min(KMAX, gesture.view.k * d / gesture.d0));
+      var wx = (gesture.m0.x - gesture.view.x) / gesture.view.k, wy = (gesture.m0.y - gesture.view.y) / gesture.view.k;
+      view = { k: k2, x: m.x - wx * k2, y: m.y - wy * k2 };
+      applyView();
+      return;
+    }
+    if (gesture.type === 'tap' || gesture.type === 'pan') {
+      var dx = p.x - gesture.start.x, dy = p.y - gesture.start.y;
+      if (gesture.type === 'tap' && Math.hypot(dx, dy) > 6) { gesture.type = 'pan'; S.userView = true; svg.classList.add('panning'); }
+      if (gesture.type === 'pan') { view = { k: gesture.view.k, x: gesture.view.x + dx, y: gesture.view.y + dy }; applyView(); }
+    }
+  });
+  function endPointer(e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.delete(e.pointerId);
+    try { svg.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (gesture && gesture.type === 'tap' && pointers.size === 0 && e.type === 'pointerup') {
+      var now = performance.now(), p = gesture.start, target = gesture.target;
+      var onThing = target instanceof Element && target.closest('.seat, .tbl');
+      if (!onThing && now - lastTap.t < 320 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 24) { zoomAt(p.x, p.y, 1.8); lastTap.t = 0; }
+      else { lastTap = { t: now, x: p.x, y: p.y }; onPlanTap(target); }
+    }
+    if (pointers.size === 0) { gesture = null; svg.classList.remove('panning'); }
+    else if (pointers.size === 1 && gesture && gesture.type === 'pinch') {
+      var rest = Array.from(pointers.values())[0];
+      gesture = { type: 'pan', start: rest, view: { k: view.k, x: view.x, y: view.y } };
+    }
+  }
+  svg.addEventListener('pointerup', endPointer);
+  svg.addEventListener('pointercancel', endPointer);
+  svg.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var p = rel(e);
+    var mouseWheel = !e.ctrlKey && e.deltaX === 0 && (e.deltaMode !== 0 || Math.abs(e.deltaY) >= 50);
+    if (e.ctrlKey || mouseWheel) {
+      var f = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0022) * (e.deltaMode === 1 ? 33 : 1));
+      zoomAt(p.x, p.y, f);
+    } else { S.userView = true; view = { k: view.k, x: view.x - e.deltaX, y: view.y - e.deltaY }; applyView(); }
+  }, { passive: false });
+  var hovered = null;
+  function hoverTable(target) {
+    var t = S.sel && target instanceof Element ? target.closest('.tbl, .seat') : null;
+    var n = t ? +t.getAttribute('data-t') : null;
+    var el = n ? tblEls.get(n) : null;
+    if (el === hovered) return;
+    if (hovered) hovered.classList.remove('hover');
+    hovered = el;
+    if (el) el.classList.add('hover');
+  }
+  if (typeof ResizeObserver === 'function') new ResizeObserver(function () { if (!S.fitted || !S.lay) return; if (!S.userView) fitView(false); else applyView(); }).observe(stage);
+
+  /* ================= Taps on the plan ================= */
+  function onPlanTap(target) {
+    if (!(target instanceof Element)) return;
+    var seat = target.closest('.seat'), tbl = target.closest('.tbl');
+    var n = seat ? +seat.getAttribute('data-t') : tbl ? +tbl.getAttribute('data-t') : null;
+    var gid = seat ? seat.getAttribute('data-gid') : null;
+    var k = seat ? +seat.getAttribute('data-k') : null;
+    if (S.sel) {
+      if (gid && gid === S.sel) { endMove(); return; }
+      var selG = S.guests.get(S.sel);
+      if (gid) { var g = S.guests.get(gid); if (g && selG && g.table === selG.table) { startMove(gid); return; } requestMove(S.sel, n, null); return; }
+      if (seat && seat.classList.contains('open')) { requestMove(S.sel, n, k); return; }
+      if (n) { requestMove(S.sel, n, null); return; }
+      return;
+    }
+    if (gid) { if (canEdit()) startMove(gid); else { flashGuest(gid); } return; }
+    if (seat && seat.classList.contains('open')) { if (canEdit()) { openPanel({ t: n, k: k }); flyToTable(n, 1); } return; }
+    if (n) { openPanel({ t: n }); flyToTable(n, 1); return; }
+    closePanel();
+  }
+
+  /* ================= Feedback ================= */
+  var toastTimer = 0;
+  function toast(msg, withUndo) {
+    var t = $('#toast');
+    t.textContent = '';
+    var span = document.createElement('span');
+    span.textContent = msg;
+    t.append(span);
+    if (withUndo && canEdit()) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = 'Undo';
+      b.addEventListener('click', function () { t.hidden = true; undo(); });
+      t.append(b);
+    }
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.hidden = true; }, withUndo ? 8000 : 5500);
+  }
+  function announce(msg) { $('#sr-live').textContent = msg; }
+  function flashGuest(id) {
+    S.flash = id;
+    clearTimeout(S.flashTimer);
+    S.flashTimer = setTimeout(function () { S.flash = null; renderMarks(); }, 3200);
+    renderMarks();
+  }
+  function viewOnlyNote() { toast(S.failed ? 'This chart can’t save changes right now. Reload the page.' : 'The chart is still loading. Try again in a moment.'); }
+
+  /* ================= Saving changes ================= */
+  function writeFailed(err) {
+    toast('That change didn’t save. Check your connection and try again.');
+  }
+  function guarded(fn) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(false); }
+    return ensureName().then(fn).then(function (r) { return r !== false; }, function (err) { writeFailed(err); return false; });
+  }
+  function gref(id) { return S.db.doc('guests/' + id); }
+  function writeSeats(n, seats) {
+    seats = Math.max(0, Math.min(30, seats));
+    var t = S.tables.get(n);
+    if (t) return S.db.doc('tables/' + t.id).update({ seats: seats });
+    return S.db.doc('tables/' + tid(n)).set({ num: n, seats: seats });
+  }
+  function seq(list, fn) { return list.reduce(function (p, x) { return p.then(function () { return fn(x); }); }, Promise.resolve()); }
+  function log(text) {
+    if (!S.db) return;
+    S.db.collection('changes').add({ at: Date.now(), by: S.myName || null, dev: S.dev || null, text: String(text).slice(0, 280) }).catch(function () {});
+  }
+  function pushUndo(label, run) { S.undo.push({ label: label, run: run }); if (S.undo.length > 40) S.undo.shift(); renderUndo(); }
+  function undo() {
+    var u = S.undo.pop();
+    renderUndo();
+    if (!u) return;
+    if (!canEdit()) { viewOnlyNote(); return; }
+    Promise.resolve().then(u.run).then(function (msg) {
+      toast(msg === false ? 'That change can’t be undone anymore. Someone may have changed it since.' : (msg || 'Undone.'));
+    }, writeFailed);
+  }
+
+  function moveGuest(id, to, seatK, opts) {
+    opts = opts || {};
+    var g = S.guests.get(id);
+    if (!g || (g.table === to && !seatK)) return Promise.resolve();
+    var from = g.table, fromOrder = g.order, name = g.name, seatsAfter = null, chosen = null;
+    return guarded(function () {
+      var p = Promise.resolve();
+      if (to === 0) chosen = 0;
+      else if (seatK) chosen = seatK;
+      else chosen = freeChair(to);
+      if (to && chosen == null) {
+        if (!opts.addSeat) return false;
+        seatsAfter = seatsOf(to) + 1;
+        chosen = seatsAfter;
+        p = writeSeats(to, seatsAfter);
+      }
+      return p.then(function () { return gref(id).update({ table: to, order: chosen }); });
+    }).then(function (ok) {
+      if (!ok) return;
+      log(to === 0 ? 'Took ' + name + ' off ' + placeName(from) : from === 0 ? 'Seated ' + name + ' at ' + placeName(to) : 'Moved ' + name + ' from ' + placeName(from) + ' to ' + placeName(to) + (seatsAfter ? ', adding a seat (now ' + seatsAfter + ')' : ''));
+      pushUndo('move ' + name, function () {
+        if (!S.guests.has(id)) return false;
+        return gref(id).update({ table: from, order: fromOrder }).then(function () {
+          if (seatsAfter === null) return;
+          var s = seatsOf(to);
+          var occupied = at(to).some(function (x) { return x.id !== id && Math.round(x.order) === s; });
+          if (!occupied) return writeSeats(to, s - 1);
+        }).then(function () {
+          log('Undo: put ' + name + ' back ' + inPlace(from));
+          return name + ' is back ' + inPlace(from) + '.';
+        });
+      });
+      flashGuest(id);
+      toast(name + ' is now ' + inPlace(to) + (seatsAfter ? ', which has ' + seatsAfter + ' seats now' : '') + '.', true);
+    });
+  }
+  function swapGuests(aId, bId) {
+    var a = S.guests.get(aId), b = S.guests.get(bId);
+    if (!a || !b) return Promise.resolve();
+    var A = { t: a.table, o: a.order }, B = { t: b.table, o: b.order }, an = a.name, bn = b.name;
+    return guarded(function () {
+      return gref(aId).update({ table: B.t, order: B.o }).then(function () { return gref(bId).update({ table: A.t, order: A.o }); });
+    }).then(function (ok) {
+      if (!ok) return;
+      log('Swapped ' + an + ' and ' + bn + ': ' + an + ' to ' + placeName(B.t) + ', ' + bn + ' to ' + placeName(A.t));
+      pushUndo('swap ' + an + ' and ' + bn, function () {
+        if (!S.guests.has(aId) || !S.guests.has(bId)) return false;
+        return gref(aId).update({ table: A.t, order: A.o }).then(function () { return gref(bId).update({ table: B.t, order: B.o }); }).then(function () {
+          log('Undo: swapped ' + an + ' and ' + bn + ' back');
+          return an + ' and ' + bn + ' are back in their old seats.';
+        });
+      });
+      flashGuest(aId);
+      toast(an + ' is now ' + inPlace(B.t) + ', and ' + bn + ' is ' + inPlace(A.t) + '.', true);
+    });
+  }
+  function changeSeats(n, delta) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
+    var seats = seatsOf(n);
+    if (delta > 0 && seats >= 30) { toast(PlaceName(n) + ' already has 30 seats.'); return Promise.resolve(); }
+    var next = seats + delta;
+    return guarded(function () { return writeSeats(n, next); }).then(function (ok) {
+      if (!ok) return;
+      log('Added a seat at ' + placeName(n) + ' (now ' + next + ')');
+      pushUndo('add a seat at ' + placeName(n), function () {
+        var s = seatsOf(n);
+        if (at(n).some(function (x) { return Math.round(x.order) === s; })) return false;
+        return writeSeats(n, s - 1).then(function () { log('Undo: took the added seat away from ' + placeName(n)); return 'Took the extra seat away from ' + placeName(n) + '.'; });
+      });
+      toast('Added a seat at ' + placeName(n) + '. It has ' + next + ' now.', true);
+    });
+  }
+  function removeEmptySeat(n) {
+    var m = seatMap(n), k = -1;
+    for (var i = m.chairs.length - 1; i >= 0; i--) if (!m.chairs[i]) { k = i + 1; break; }
+    if (k === -1) { toast(PlaceName(n) + ' has no empty seat to remove. Move someone to another table first.'); return Promise.resolve(); }
+    return removeSeatAt(n, k);
+  }
+  function removeSeatAt(n, k) {
+    if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
+    var m = seatMap(n);
+    if (m.chairs[k - 1]) { toast('Someone is sitting in that seat. Move them first.'); return Promise.resolve(); }
+    var seats = seatsOf(n);
+    var shift = at(n).filter(function (g) { return Math.round(g.order) > k; }).map(function (g) { return { id: g.id, order: g.order }; });
+    return guarded(function () {
+      return seq(shift, function (s) { return gref(s.id).update({ order: s.order - 1 }); }).then(function () { return writeSeats(n, seats - 1); });
+    }).then(function (ok) {
+      if (!ok) return;
+      log('Removed an empty seat from ' + placeName(n) + ' (now ' + (seats - 1) + ')');
+      pushUndo('remove a seat at ' + placeName(n), function () {
+        return writeSeats(n, seatsOf(n) + 1).then(function () {
+          return seq(shift, function (s) { return S.guests.has(s.id) ? gref(s.id).update({ order: s.order }) : null; });
+        }).then(function () { log('Undo: put a seat back at ' + placeName(n)); return 'Put the seat back at ' + placeName(n) + '.'; });
+      });
+      toast('Removed an empty seat from ' + placeName(n) + '. It has ' + (seats - 1) + ' now.', true);
+    });
+  }
+  function addGuest(name, table, seatK) {
+    var ref = null, addedSeat = null, chosen = 0;
+    return guarded(function () {
+      ref = S.db.collection('guests').doc();
+      var p = Promise.resolve();
+      if (table > 0) {
+        chosen = seatK && !seatMap(table).chairs[seatK - 1] ? seatK : freeChair(table);
+        if (chosen == null) { addedSeat = seatsOf(table) + 1; chosen = addedSeat; p = writeSeats(table, addedSeat); }
+      }
+      return p.then(function () { return ref.set({ name: name, table: table, order: chosen }); });
+    }).then(function (ok) {
+      if (!ok) return;
+      var id = ref.id;
+      log('Added ' + name + (table ? ' to ' + placeName(table) : ' to Not seated yet') + (addedSeat ? ', adding a seat (now ' + addedSeat + ')' : ''));
+      pushUndo('add ' + name, function () {
+        return S.db.doc('guests/' + id).delete().then(function () {
+          if (addedSeat === null) return;
+          var s = seatsOf(table);
+          if (!at(table).some(function (x) { return x.id !== id && Math.round(x.order) === s; })) return writeSeats(table, s - 1);
+        }).then(function () { log('Undo: took ' + name + ' back off the guest list'); return name + ' is off the chart again.'; });
+      });
+      flashGuest(id);
+      toast('Added ' + name + ' ' + inPlace(table) + (addedSeat ? ' and gave the table one more seat' : '') + '.', true);
+    });
+  }
+  function renameGuest(id, name) {
+    var g = S.guests.get(id);
+    if (!g || g.name === name) return Promise.resolve();
+    var old = g.name;
+    return guarded(function () { return gref(id).update({ name: name }); }).then(function (ok) {
+      if (!ok) return;
+      log('Changed the name ' + old + ' to ' + name);
+      pushUndo('rename ' + name, function () {
+        if (!S.guests.has(id)) return false;
+        return gref(id).update({ name: old }).then(function () { log('Undo: changed ' + name + ' back to ' + old); return 'Changed the name back to ' + old + '.'; });
+      });
+      flashGuest(id);
+      toast('Changed ' + old + ' to ' + name + '.', true);
+    });
+  }
+  function deleteGuest(id) {
+    var g = S.guests.get(id);
+    if (!g) return Promise.resolve();
+    var data = { name: g.name, table: g.table, order: g.order };
+    return guarded(function () { return gref(id).delete(); }).then(function (ok) {
+      if (!ok) return;
+      log('Removed ' + data.name + ' from the guest list');
+      pushUndo('remove ' + data.name, function () {
+        return gref(id).set(data).then(function () { log('Undo: put ' + data.name + ' back on the guest list'); return data.name + ' is back on the guest list.'; });
+      });
+      toast('Removed ' + data.name + ' from the guest list.', true);
+    });
+  }
+
+  /* ================= Moving people ================= */
+  function startMove(id) {
+    if (!canEdit()) { viewOnlyNote(); return; }
+    var g = S.guests.get(id);
+    if (!g) return;
+    S.sel = id; S.resOpen = false; S.panel = null;
+    scheduleRender();
+    announce(g.name + ' is selected. Now choose the table where ' + g.name + ' should sit.');
+  }
+  function endMove() { if (!S.sel) return; S.sel = null; scheduleRender(); }
+  function requestMove(id, to, seatK) {
+    var g = S.guests.get(id);
+    if (!g) { endMove(); return; }
+    if (!canEdit()) { endMove(); viewOnlyNote(); return; }
+    if (g.table === to && !seatK) { endMove(); return; }
+    if (to === 0 || seatK || freeChair(to) != null) { endMove(); moveGuest(id, to, seatK || null); return; }
+    openFull(id, to);
+  }
+
+  /* ================= Dialogs ================= */
+  function openDialog(d) { try { d.showModal(); } catch (e) { d.setAttribute('open', ''); } }
+  function closeDialog(d) { if (d.open) { try { d.close(); } catch (e) { d.removeAttribute('open'); } } }
+  var addCtx = { t: 0, k: null };
+  function openAdd(table, seatK) {
+    if (!canEdit()) { viewOnlyNote(); return; }
+    S.addDup = false;
+    addCtx.t = table || 0;
+    addCtx.k = seatK || null;
+    $('#add-title').textContent = table ? 'Add a guest to ' + placeName(table) : 'Add a guest';
+    $('#add-name').value = '';
+    $('#add-warn').hidden = true;
+    $('#add-submit').textContent = 'Add guest';
+    var opts = '<option value="0">Not seated yet</option>';
+    TABLES.forEach(function (n) { var o = openCount(n); opts += '<option value="' + n + '">' + PlaceName(n) + ' · ' + (o > 0 ? o + ' open' : 'full, adds a seat') + '</option>'; });
+    $('#add-table').innerHTML = opts;
+    $('#add-table').value = String(table || 0);
+    openDialog($('#dlg-add'));
+    setTimeout(function () { $('#add-name').focus(); }, 40);
+  }
+  function openRename(id) {
+    var g = S.guests.get(id);
+    if (!g) return;
+    S.renameId = id;
+    $('#rn-name').value = g.name;
+    $('#rn-warn').hidden = true;
+    openDialog($('#dlg-rename'));
+    setTimeout(function () { var i = $('#rn-name'); i.focus(); i.select(); }, 40);
+  }
+  function openFull(id, n) {
+    var g = S.guests.get(id);
+    if (!g) return;
+    S.fullCtx = { id: id, n: n };
+    var seats = seatsOf(n), others = at(n);
+    $('#full-title').textContent = PlaceName(n) + (seats ? ' is full' : ' has no seats yet');
+    $('#full-body').textContent = seats ? 'All ' + seats + ' seats are taken. Add one more chair, or swap ' + g.name + ' with someone who is already there.' : 'Add a seat so ' + g.name + ' can sit there.';
+    $('#full-add').textContent = 'Add a seat and move ' + g.name;
+    $('#full-swap-label').hidden = !others.length;
+    $('#full-swap-label').textContent = others.length ? 'Or swap with someone at ' + placeName(n) + '. They take ' + g.name + '’s spot ' + inPlace(g.table) + '.' : '';
+    $('#full-swaps').innerHTML = others.map(function (x) { return '<button type="button" class="btn" data-swap="' + esc(x.id) + '">' + esc(x.name) + '</button>'; }).join('');
+    openDialog($('#dlg-full'));
+  }
+  function openConfirm(id) {
+    var g = S.guests.get(id);
+    if (!g) return;
+    S.confirmId = id;
+    $('#cf-title').textContent = 'Remove ' + g.name + ' from the guest list?';
+    $('#cf-body').textContent = 'This takes ' + g.name + ' off the chart completely. If it was a mistake, press Undo right after.';
+    openDialog($('#dlg-confirm'));
+  }
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) closeDialog(d); });
+  });
+  $('#add-name').addEventListener('input', function () { if (S.addDup) { S.addDup = false; $('#add-submit').textContent = 'Add guest'; } $('#add-warn').hidden = true; });
+  $('#add-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = cleanName($('#add-name').value), table = Number($('#add-table').value) || 0, warn = $('#add-warn');
+    if (!name) { warn.textContent = 'Type the guest’s name first.'; warn.hidden = false; $('#add-name').focus(); return; }
+    var dup = null;
+    S.guests.forEach(function (g) { if (!dup && norm(g.name) === norm(name)) dup = g; });
+    if (dup && !S.addDup) { warn.textContent = dup.name + ' is already on the chart ' + inPlace(dup.table) + '. Add a second person with this name?'; warn.hidden = false; $('#add-submit').textContent = 'Add anyway'; S.addDup = true; return; }
+    closeDialog($('#dlg-add'));
+    closePanel();
+    addGuest(name, table, table && table === addCtx.t ? addCtx.k : null);
+  });
+  $('#rn-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = cleanName($('#rn-name').value);
+    if (!name) { var w = $('#rn-warn'); w.textContent = 'The name can’t be empty.'; w.hidden = false; return; }
+    closeDialog($('#dlg-rename'));
+    renameGuest(S.renameId, name);
+  });
+  $('#full-add').addEventListener('click', function () { var c = S.fullCtx; closeDialog($('#dlg-full')); if (!c) return; endMove(); moveGuest(c.id, c.n, null, { addSeat: true }); });
+  $('#full-swaps').addEventListener('click', function (e) { var b = e.target.closest('[data-swap]'); if (!b) return; var c = S.fullCtx; closeDialog($('#dlg-full')); if (!c) return; endMove(); swapGuests(c.id, b.dataset.swap); });
+  $('#cf-ok').addEventListener('click', function () { var id = S.confirmId; closeDialog($('#dlg-confirm')); endMove(); if (id) deleteGuest(id); });
+
+  /* ================= Toolbar, move bar, drawer ================= */
+  $('#mb-cancel').addEventListener('click', endMove);
+  $('#mb-rename').addEventListener('click', function () { if (S.sel) openRename(S.sel); });
+  $('#mb-takeoff').addEventListener('click', function () { var id = S.sel; endMove(); if (id) moveGuest(id, 0, null); });
+  $('#mb-delete').addEventListener('click', function () { if (S.sel) openConfirm(S.sel); });
+  $('#mb-grid').addEventListener('click', function (e) { var b = e.target.closest('[data-to]'); if (b && S.sel) requestMove(S.sel, +b.dataset.to, null); });
+  $('#btn-undo').addEventListener('click', undo);
+  $('#btn-add').addEventListener('click', function () { openAdd(0, null); });
+  var drawerOpener = null;
+  function toggleDrawer(open) {
+    $('#drawer').hidden = !open;
+    $('#scrim').hidden = !open;
+    if (open) { drawerOpener = document.activeElement; changesSig = ''; renderChanges(); setTimeout(function () { $('#drawer-close').focus(); }, 30); }
+    else if (drawerOpener && drawerOpener.focus) drawerOpener.focus({ preventScroll: true });
+  }
+  $('#btn-changes').addEventListener('click', function () { toggleDrawer(true); });
+  $('#drawer-close').addEventListener('click', function () { toggleDrawer(false); });
+  $('#scrim').addEventListener('click', function () { toggleDrawer(false); });
+  function setHint(show) { $('#hint').hidden = !show; try { if (show) localStorage.removeItem('ck-plan-hint'); else localStorage.setItem('ck-plan-hint', 'hidden'); } catch (e) {} }
+  $('#hint-hide').addEventListener('click', function () { setHint(false); });
+  $('#howto-show').addEventListener('click', function () { toggleDrawer(false); setHint(true); });
+  $('#stats').addEventListener('click', function (e) { var b = e.target.closest('[data-goto]'); if (b) { var n = +b.dataset.goto; openPanel({ t: n }); flyToTable(n, 1); } });
+  $('#uns-list').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick]');
+    if (!b) return;
+    var id = b.dataset.pick;
+    if (S.sel === id) endMove(); else startMove(id);
+  });
+
+  var timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+  var dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  function dayLabel(d) {
+    var now = new Date(), a = new Date(now.getFullYear(), now.getMonth(), now.getDate()), b = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff = Math.round((a - b) / 86400000);
+    return diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : dayFmt.format(d);
+  }
+  var changesSig = '', changesToken = 0;
+  function renderChanges() {
+    if ($('#drawer').hidden) return;
+    var sig = S.changes.map(function (c) { return c.id; }).join(',') + '|' + !!S.db;
+    if (sig === changesSig) return;
+    changesSig = sig;
+    var list = $('#changes-list'), tok = ++changesToken, items = S.changes.slice();
+    if (!S.db) { list.innerHTML = '<li class="empty">Changes show up here once the guest list loads.</li>'; return; }
+    if (!items.length) { list.innerHTML = '<li class="empty">No changes yet. When anyone moves a guest or changes seats, it shows up here.</li>'; return; }
+    var ids = [];
+    items.forEach(function (c) { if (c.by && ids.indexOf(c.by) === -1) ids.push(c.by); });
+    var named = (S.user && ids.length) ? S.user.profiles(ids).catch(function () { return {}; }) : Promise.resolve({});
+    named.then(function (ps) {
+      if (tok !== changesToken) return;
+      ps = ps || {};
+      list.textContent = '';
+      var lastDay = '';
+      items.forEach(function (c) {
+        var d = new Date(c.at), day = dayLabel(d);
+        if (day !== lastDay) { var hd = document.createElement('li'); hd.className = 'day'; hd.textContent = day; list.append(hd); lastDay = day; }
+        var li = document.createElement('li'); li.className = 'change';
+        var who = (c.dev && S.dev && c.dev === S.dev) ? 'You' : (c.by || 'Someone');
+        var w = document.createElement('div'); w.className = 'who'; w.textContent = who + ' · ' + timeFmt.format(d);
+        var t = document.createElement('div'); t.className = 'what'; t.textContent = c.text;
+        li.append(w, t);
+        list.append(li);
+      });
+    });
+  }
+
+  /* ================= Search ================= */
+  var qi = $('#q');
+  function clearSearch() { qi.value = ''; S.q = ''; S.qn = ''; S.resOpen = false; renderMarks(); renderResults(); }
+  function chooseResult(i) {
+    var it = S.items[i];
+    if (!it) return;
+    S.resOpen = false;
+    renderResults();
+    qi.blur();
+    if (it.kind === 't') { if (S.sel) requestMove(S.sel, it.n, null); else { openPanel({ t: it.n }); flyToTable(it.n, 1); } }
+    else if (S.sel) requestMove(S.sel, it.g.table, null);
+    else flyToGuest(it.g.id);
+  }
+  qi.addEventListener('input', function () { S.q = qi.value; S.qn = norm(S.q); S.resIdx = 0; S.resOpen = true; renderMarks(); renderResults(); });
+  qi.addEventListener('focus', function () { if (S.qn) { S.resOpen = true; renderResults(); } });
+  qi.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); S.resOpen = true; S.resIdx = Math.min(S.items.length - 1, S.resIdx + 1); renderResults(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); S.resIdx = Math.max(0, S.resIdx - 1); renderResults(); }
+    else if (e.key === 'Enter') { e.preventDefault(); chooseResult(S.resIdx); }
+    else if (e.key === 'Escape') { e.preventDefault(); if (S.q) clearSearch(); else qi.blur(); }
+  });
+  $('#q-clear').addEventListener('click', function () { clearSearch(); qi.focus(); });
+  $('#results').addEventListener('click', function (e) { var r = e.target.closest('[data-res]'); if (r) chooseResult(+r.dataset.res); });
+  document.addEventListener('pointerdown', function (e) { if (S.resOpen && !e.target.closest('#search')) { S.resOpen = false; renderResults(); } });
+  document.addEventListener('keydown', function (e) {
+    var t = e.target instanceof Element ? e.target : null;
+    var typing = t && t.closest('input, textarea, select');
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z' && !typing) { if (document.querySelector('dialog[open]')) return; e.preventDefault(); undo(); return; }
+    if (!typing && !document.querySelector('dialog[open]')) {
+      if (e.key === '+' || e.key === '=') { zoomCenter(1.4); return; }
+      if (e.key === '-' || e.key === '_') { zoomCenter(1 / 1.4); return; }
+      if (e.key === '0') { S.userView = false; fitView(true); return; }
+    }
+    if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+    if (!$('#drawer').hidden) { toggleDrawer(false); return; }
+    if (S.resOpen) { S.resOpen = false; renderResults(); return; }
+    if (S.sel) { endMove(); return; }
+    closePanel();
+  });
+
+  /* ================= Spreadsheet download ================= */
+  function buildCSV() {
+    derive();
+    var cols = TABLES.map(function (n) { var m = seatMap(n); return { head: n === 29 ? 'Table 29 (sweetheart)' : 'Table ' + n, cells: m.chairs.map(function (g) { return g ? g.name : '(open seat)'; }).concat(m.over.map(function (g) { return g.name + ' (no chair)'; })) }; });
+    var uns = at(0);
+    if (uns.length) cols.push({ head: 'Not seated yet', cells: uns.map(function (g) { return g.name; }) });
+    var rows = 0;
+    cols.forEach(function (c) { rows = Math.max(rows, c.cells.length); });
+    function cell(v) { v = String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+    var lines = [['Seat'].concat(cols.map(function (c) { return c.head; })).map(cell).join(',')];
+    for (var r = 0; r < rows; r++) lines.push([String(r + 1)].concat(cols.map(function (c) { return c.cells[r] || ''; })).map(cell).join(','));
+    return '﻿' + lines.join('\r\n') + '\r\n';
+  }
+  function downloadCSV() {
+    try {
+      var blob = new Blob([buildCSV()], { type: 'text/csv;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (S.meta && S.meta.file) || 'seating-chart.csv';
+      a.hidden = true;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+      toast('Spreadsheet downloaded. It opens in Excel, Numbers or Google Sheets.');
+    } catch (e) { toast('The spreadsheet couldn’t be downloaded here.'); }
+  }
+  document.querySelectorAll('.dl-btn').forEach(function (b) { b.addEventListener('click', downloadCSV); });
+
+  /* ================= Live data ================= */
+  function markLoaded(key, snap) {
+    var definitive = !(snap && snap.metadata && snap.metadata.fromCache);
+    if (definitive) { S[key] = true; return; }
+    if (!S['wait_' + key]) S['wait_' + key] = setTimeout(function () { S[key] = true; scheduleRender(); }, 2500);
+  }
+  function onSubError(e) {
+    var code = e && e.code;
+    S.failed = code === 'revoked' ? 'revoked' : (code === 'not_granted' || code === 'capability_disabled' || code === 'capability_removed') ? 'nodb' : 'error';
+    scheduleRender();
+  }
+  function subscribe() {
+    S.db.collection('tables').limit(1000).onSnapshot(function (snap) {
+      var m = new Map();
+      snap.docs.forEach(function (d) {
+        var v = d.data() || {}, num = Number(v.num);
+        if (Number.isInteger(num) && num >= 1 && num <= 29) m.set(num, { id: d.id, num: num, seats: Math.max(0, Math.min(30, Math.floor(Number(v.seats) || 0))) });
+      });
+      S.tables = m;
+      markLoaded('loadedT', snap);
+      scheduleRender();
+    }, onSubError);
+    S.db.collection('guests').limit(1000).onSnapshot(function (snap) {
+      var m = new Map();
+      snap.docs.forEach(function (d) {
+        var v = d.data() || {};
+        if (typeof v.name !== 'string' || !v.name.trim()) return;
+        var tb = Number(v.table);
+        m.set(d.id, { id: d.id, name: v.name.trim().slice(0, 120), table: Number.isInteger(tb) && tb >= 0 && tb <= 29 ? tb : 0, order: Number(v.order) || 0 });
+      });
+      S.guests = m;
+      if (S.sel && !m.has(S.sel)) S.sel = null;
+      markLoaded('loadedG', snap);
+      scheduleRender();
+    }, onSubError);
+    S.db.collection('changes').orderBy('at', 'desc').limit(300).onSnapshot(function (snap) {
+      S.changes = snap.docs.map(function (d) {
+        var v = d.data() || {};
+        return { id: d.id, at: Number(v.at) || 0, by: typeof v.by === 'string' ? v.by : null, dev: typeof v.dev === 'string' ? v.dev : null, text: typeof v.text === 'string' ? v.text.slice(0, 300) : '' };
+      }).filter(function (c) { return c.text; });
+      renderChanges();
+    }, function () {});
+  }
+
+  /* ================= Shared data (Supabase) =================
+     The page keeps its own copy of the chart and edits it right away, then
+     sends the edits to the database in batches. Every few seconds it asks
+     the database for its version number and reloads when someone else has
+     changed something. */
+  function makeStore(opts) {
+    var cols = { tables: new Map(), guests: new Map(), changes: new Map() };
+    var subs = [], queue = [];
+    var version = 0, loaded = false, dead = false, inflight = false, refreshing = false, polling = false, wantRefresh = false;
+    var dirty = [], notifyTimer = 0, flushTimer = 0, retryDelay = 0, loadDelay = 0, seq = 0;
+
+    function clone(o) { return o == null ? o : JSON.parse(JSON.stringify(o)); }
+    function rpc(fn, body) {
+      var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      var timer = ctl ? setTimeout(function () { ctl.abort(); }, 15000) : 0;
+      return fetch(opts.url + '/rest/v1/rpc/' + fn, {
+        method: 'POST',
+        headers: { 'apikey': opts.anon, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(body),
+        cache: 'no-store',
+        signal: ctl ? ctl.signal : undefined
+      }).then(function (r) {
+        clearTimeout(timer);
+        return r.text().then(function (t) {
+          var j = null;
+          try { j = t ? JSON.parse(t) : null; } catch (e) {}
+          if (r.ok) return j;
+          throw { status: r.status, code: (j && j.code) || '', message: (j && j.message) || '' };
+        });
+      }, function (e) {
+        clearTimeout(timer);
+        throw { status: 0, code: 'network', message: String((e && e.message) || e) };
+      });
+    }
+    function isNet(err) { return !err || !err.status || err.status >= 500 || err.status === 408 || err.status === 429; }
+    function isBadKey(err) { return !!err && (err.code === '28000' || err.status === 403); }
+    function die(reason) { dead = true; queue = []; opts.onPending(false); opts.onFatal(reason); }
+
+    function touch(c) { if (dirty.indexOf(c) === -1) dirty.push(c); if (!notifyTimer) notifyTimer = setTimeout(notify, 0); }
+    function notify() {
+      notifyTimer = 0;
+      var cs = dirty; dirty = [];
+      subs.slice().forEach(function (s) { if (cs.indexOf(s.c) !== -1) emit(s); });
+    }
+    function emit(s) {
+      var rows = [];
+      cols[s.c].forEach(function (v, id) { rows.push({ id: id, v: v }); });
+      if (s.order) {
+        var f = s.order[0], dir = s.order[1] === 'desc' ? -1 : 1;
+        rows.sort(function (a, b) { var x = a.v[f], y = b.v[f]; return (x < y ? -1 : x > y ? 1 : 0) * dir; });
+      } else rows.sort(function (a, b) { return a.id < b.id ? -1 : a.id > b.id ? 1 : 0; });
+      if (s.lim) rows = rows.slice(0, s.lim);
+      var docs = rows.map(function (r) { return { id: r.id, exists: true, data: function () { return clone(r.v); } }; });
+      try { s.next({ docs: docs, size: docs.length, empty: !docs.length, metadata: { fromCache: false, hasPendingWrites: queue.length > 0 || inflight } }); }
+      catch (e) { setTimeout(function () { throw e; }); }
+    }
+
+    function applyLocal(op) {
+      var m = cols[op.c];
+      if (!m) return;
+      if (op.op === 'set') m.set(op.id, clone(op.d));
+      else if (op.op === 'update') { if (m.has(op.id)) m.set(op.id, Object.assign({}, m.get(op.id), clone(op.d))); }
+      else if (op.op === 'delete') m.delete(op.id);
+      touch(op.c);
+    }
+    function enqueue(op) {
+      queue.push(op);
+      opts.onPending(true);
+      scheduleFlush(0);
+    }
+    function write(op) {
+      if (dead) return Promise.reject({ code: 'dead' });
+      applyLocal(op);
+      enqueue({ op: op.op, c: op.c, id: op.id, d: op.d ? clone(op.d) : undefined });
+      return Promise.resolve();
+    }
+    function scheduleFlush(ms) {
+      if (flushTimer || inflight || dead) return;
+      flushTimer = setTimeout(function () { flushTimer = 0; flush(); }, ms);
+    }
+    function flush() {
+      if (inflight || dead || !queue.length) return;
+      if (!loaded) { scheduleFlush(600); return; }
+      var ops = queue.slice(0, 300), expected = version + 1;
+      inflight = true;
+      rpc('wedding_apply', { p_key: opts.key, p_ops: ops }).then(function (v) {
+        inflight = false;
+        queue.splice(0, ops.length);
+        retryDelay = 0;
+        opts.onNet(false);
+        v = Number(v);
+        var someoneElse = v !== expected;
+        if (v) version = v;
+        if (queue.length) { flush(); return; }
+        opts.onPending(false);
+        if (someoneElse || wantRefresh) refresh();
+      }, function (err) {
+        inflight = false;
+        if (isBadKey(err)) { die('badkey'); return; }
+        if (isNet(err)) {
+          opts.onNet(true);
+          retryDelay = Math.min(15000, retryDelay ? retryDelay * 2 : 1500);
+          scheduleFlush(retryDelay);
+          return;
+        }
+        // The database refused this batch, so everything queued after it is dropped too
+        // and the page goes back to what the database has.
+        queue = [];
+        opts.onPending(false);
+        opts.onRejected(err);
+        refresh(true);
+      });
+    }
+
+    function replaceAll(s) {
+      s = s || {};
+      var t = new Map(), g = new Map(), ch = new Map();
+      (s.tables || []).forEach(function (r) { t.set(String(r.id), { num: r.num, seats: r.seats }); });
+      (s.guests || []).forEach(function (r) { g.set(String(r.id), { name: r.name, table: r.table, order: r.order }); });
+      (s.changes || []).forEach(function (r) { ch.set('c' + r.id, { at: Number(r.at) || 0, by: r.by || null, dev: r.dev || null, text: r.text || '' }); });
+      cols.tables = t; cols.guests = g; cols.changes = ch;
+      version = Number(s.version) || 0;
+      loaded = true;
+      opts.onMeta(s.meta || {});
+      touch('tables'); touch('guests'); touch('changes');
+    }
+    function refresh(force) {
+      if (dead) return;
+      if (refreshing) { wantRefresh = true; return; }
+      if (!force && (queue.length || inflight)) { wantRefresh = true; return; }
+      refreshing = true;
+      wantRefresh = false;
+      rpc('wedding_state', { p_key: opts.key }).then(function (s) {
+        refreshing = false;
+        loadDelay = 0;
+        opts.onNet(false);
+        if (queue.length || inflight) { wantRefresh = true; return; }
+        replaceAll(s);
+        if (wantRefresh) refresh();
+      }, function (err) {
+        refreshing = false;
+        if (isBadKey(err)) { die('badkey'); return; }
+        if (!isNet(err)) { die('error'); return; }
+        opts.onNet(true);
+        if (!loaded) { loadDelay = Math.min(15000, loadDelay ? loadDelay * 2 : 1500); setTimeout(refresh, loadDelay); }
+      });
+    }
+    function poll() {
+      if (dead || !loaded || inflight || refreshing || polling || queue.length) return;
+      if (document.visibilityState === 'hidden') return;
+      polling = true;
+      rpc('wedding_version', { p_key: opts.key }).then(function (v) {
+        polling = false;
+        opts.onNet(false);
+        if (Number(v) !== version) refresh();
+      }, function (err) {
+        polling = false;
+        if (isBadKey(err)) die('badkey'); else opts.onNet(true);
+      });
+    }
+    setInterval(poll, opts.pollMs || 4000);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { poll(); if (queue.length) scheduleFlush(0); } });
+    window.addEventListener('focus', poll);
+    window.addEventListener('online', function () {
+      retryDelay = 0;
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = 0; }
+      if (queue.length) flush();
+      if (!loaded) refresh(); else poll();
+    });
+
+    function docRef(c, id) {
+      return {
+        id: id,
+        set: function (d) { return write({ op: 'set', c: c, id: id, d: d }); },
+        update: function (d) { return write({ op: 'update', c: c, id: id, d: d }); },
+        delete: function () { return write({ op: 'delete', c: c, id: id }); }
+      };
+    }
+    function query(c, q) {
+      return {
+        limit: function (n) { return query(c, Object.assign({}, q, { lim: n })); },
+        orderBy: function (f, dir) { return query(c, Object.assign({}, q, { order: [f, dir || 'asc'] })); },
+        onSnapshot: function (next) {
+          var s = { c: c, next: next, order: q.order, lim: q.lim };
+          subs.push(s);
+          if (loaded) setTimeout(function () { emit(s); }, 0);
+          return function () { var i = subs.indexOf(s); if (i >= 0) subs.splice(i, 1); };
+        }
+      };
+    }
+    function newId(prefix) {
+      var a = 'abcdefghijkmnopqrstuvwxyz23456789', s = prefix, r = null;
+      try { r = crypto.getRandomValues(new Uint8Array(12)); } catch (e) {}
+      for (var i = 0; i < 12; i++) s += a[(r ? r[i] : Math.floor(Math.random() * 256)) % a.length];
+      return s;
+    }
+    return {
+      doc: function (path) { var p = String(path).split('/'); return docRef(p[0], p[1]); },
+      collection: function (c) {
+        var q = query(c, {});
+        q.doc = function (id) { return docRef(c, id || newId(c === 'guests' ? 'g' : 'x')); };
+        q.add = function (d) {
+          if (dead) return Promise.reject({ code: 'dead' });
+          var id = 'local' + (++seq);
+          cols[c].set(id, Object.assign({ at: Date.now() }, clone(d)));
+          touch(c);
+          enqueue({ op: 'set', c: c, id: id, d: clone(d) });
+          return Promise.resolve(docRef(c, id));
+        };
+        return q;
+      },
+      pending: function () { return queue.length + (inflight ? 1 : 0); },
+      start: function () { refresh(); }
+    };
+  }
+
+  function readKey() {
+    var h = String(location.hash || '').replace(/^#/, ''), k = '';
+    var m = /(?:^|[&;])k=([A-Za-z0-9_-]{8,80})/.exec(h);
+    if (m) k = m[1]; else if (/^[A-Za-z0-9_-]{8,80}$/.test(h)) k = h;
+    if (k) { try { localStorage.setItem('ck-key', k); } catch (e) {} return k; }
+    var stored = '';
+    try { stored = localStorage.getItem('ck-key') || ''; } catch (e) {}
+    if (stored) { try { history.replaceState(null, '', location.pathname + location.search + '#' + stored); } catch (e) {} }
+    return stored;
+  }
+  function localId() {
+    var id = '';
+    try { id = localStorage.getItem('ck-dev') || ''; } catch (e) {}
+    if (!/^[a-z0-9]{8,40}$/.test(id)) {
+      id = '';
+      var a = 'abcdefghijkmnopqrstuvwxyz23456789', r = null;
+      try { r = crypto.getRandomValues(new Uint8Array(12)); } catch (e) {}
+      for (var i = 0; i < 12; i++) id += a[(r ? r[i] : Math.floor(Math.random() * 256)) % a.length];
+      try { localStorage.setItem('ck-dev', id); } catch (e) {}
+    }
+    return id;
+  }
+  function applyMeta(m) {
+    var prev = JSON.stringify(S.meta || {});
+    S.meta = m || {};
+    if (S.meta.title && document.title !== S.meta.title) document.title = S.meta.title;
+    $('#brand-a').textContent = S.meta.couple || 'Seating chart';
+    $('#brand-b').textContent = S.meta.sub || ' ';
+    if (JSON.stringify(S.meta) !== prev) { planSig = ''; scheduleRender(); }
+  }
+
+  /* ================= Your name on the change list ================= */
+  var nameWaiters = [];
+  function ensureName() {
+    if (S.nameAsked) return Promise.resolve();
+    return new Promise(function (res) { nameWaiters.push(res); if (nameWaiters.length === 1) openNameDialog(); });
+  }
+  function openNameDialog() {
+    $('#name-in').value = S.myName || '';
+    openDialog($('#dlg-name'));
+    setTimeout(function () { try { $('#name-in').focus(); } catch (e) {} }, 60);
+  }
+  function finishName(name) {
+    S.myName = cleanName(name).slice(0, 40);
+    S.nameAsked = true;
+    try { localStorage.setItem('ck-name', S.myName); localStorage.setItem('ck-name-asked', '1'); } catch (e) {}
+    closeDialog($('#dlg-name'));
+    renderNameRow();
+    var w = nameWaiters.splice(0);
+    w.forEach(function (f) { f(); });
+  }
+  $('#name-form').addEventListener('submit', function (e) { e.preventDefault(); finishName($('#name-in').value); });
+  $('#name-skip').addEventListener('click', function () { finishName(''); });
+  $('#dlg-name').addEventListener('close', function () { if (nameWaiters.length) finishName(S.myName || ''); });
+  function renderNameRow() {
+    var r = $('#me-row');
+    if (!r) return;
+    r.textContent = '';
+    var s = document.createElement('span');
+    s.textContent = S.myName ? 'Your changes show as ' + S.myName + '. ' : 'Your changes show as “Someone.” ';
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'linkish';
+    b.textContent = S.myName ? 'Change' : 'Add your name';
+    b.addEventListener('click', openNameDialog);
+    r.append(s, b);
+  }
+
+  function start() {
+    var hintHidden = false;
+    try { hintHidden = localStorage.getItem('ck-plan-hint') === 'hidden'; } catch (e) {}
+    $('#hint').hidden = hintHidden;
+    var fontsDone = function () { if (S.fontsReady) return; S.fontsReady = true; meas.clear(); planSig = ''; scheduleRender(); };
+    if (document.fonts && document.fonts.load) {
+      Promise.all([
+        document.fonts.load('semi-condensed 700 12.5px "Open Sans"', 'Ab'), document.fonts.load('semi-condensed 400 11.5px "Open Sans"', 'Ab'), document.fonts.load('italic semi-condensed 600 11.5px "Open Sans"', 'Ab'), document.fonts.load('400 24px "Open Sans"', 'Ab')
+      ]).then(function () { return document.fonts.ready; }).then(fontsDone, fontsDone);
+      setTimeout(fontsDone, 2500);
+      if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', function () { if (!S.fontsReady) return; meas.clear(); planSig = ''; scheduleRender(); });
+    } else fontsDone();
+    S.dev = localId();
+    try { S.myName = localStorage.getItem('ck-name') || ''; S.nameAsked = localStorage.getItem('ck-name-asked') === '1'; } catch (e) {}
+    renderNameRow();
+    S.key = readKey();
+    if (!S.key) { S.failed = 'nokey'; S.loadedG = true; S.loadedT = true; scheduleRender(); return; }
+    var pendingTimer = 0;
+    S.db = makeStore({
+      url: SUPA.url, anon: SUPA.key, key: S.key, pollMs: window.__POLL_MS || 4000,
+      onMeta: applyMeta,
+      onNet: function (down) { if (S.netDown !== down) { S.netDown = down; scheduleRender(); } },
+      onPending: function (p) {
+        clearTimeout(pendingTimer);
+        if (p) pendingTimer = setTimeout(function () { S.pending = true; scheduleRender(); }, 1200);
+        else if (S.pending) { S.pending = false; scheduleRender(); }
+      },
+      onRejected: function () { toast('That change didn’t save, so the chart went back to how it was. Try it again.'); },
+      onFatal: function (why) { S.failed = why; scheduleRender(); }
+    });
+    subscribe();
+    S.db.start();
+    window.addEventListener('beforeunload', function (e) { if (S.db && S.db.pending()) { e.preventDefault(); e.returnValue = ''; } });
+  }
+  start();
+})();
+</script>
+
+</body>
+</html>
