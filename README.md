@@ -30,6 +30,8 @@ Anyone still using the old link will see "This link doesn't work anymore."
 
 Push to `main`. Railway redeploys on its own.
 
+If a push doesn't show up on the live link after a few minutes, open the wedding-seating service in Railway, press Cmd+K and choose Deploy latest commit.
+
 ## After the wedding
 
 Delete the Railway service, then run this in Supabase:
