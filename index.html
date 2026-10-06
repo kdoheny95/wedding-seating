@@ -327,6 +327,23 @@ button.chip{cursor:pointer}
 .tlist .f{justify-self:end;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .tlist .m{grid-column:1/-1;font-size:12.5px;color:var(--ink-3)}
 .tlist .w{grid-column:1/-1;font-size:12.5px;font-weight:700;color:var(--over)}
+.plist .grp-names{font-size:13px;line-height:1.35;color:var(--ink-2)}
+.plist .ed{flex:none}
+dialog.pick-dlg{width:min(520px,calc(100vw - 24px))}
+.pick input[type=search]{height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#f7f8fa;font-size:16px}
+.pick-list{overflow:auto;max-height:min(50vh,440px);border:1px solid var(--line);border-radius:12px;padding:4px 0;overscroll-behavior:contain}
+.pick-t{padding:3px 0}
+.pick-t+.pick-t{border-top:1px solid #eef0f3}
+.pick-list label{display:flex;align-items:center;gap:10px;min-height:40px;padding:4px 12px;font-size:14.5px;cursor:pointer}
+.pick-list label:hover{background:#f6f7f9}
+.pick-list input[type=checkbox]{flex:none;width:19px;height:19px;margin:0;accent-color:var(--ui)}
+.pick-th{font-weight:700}
+.pick-th .c{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--ink-3)}
+.pick-list label.pick-g{padding-left:34px}
+.pick-g .note{margin-left:auto;font-size:12px;color:var(--ink-3)}
+.pick-none{margin:0;padding:10px 12px;font-size:14px;color:var(--ink-2)}
+.pick-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pick-foot .n{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--ink-2)}
 .mb-extra{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .mb-extra select{height:36px;padding:0 8px;border:1px solid var(--line);border-radius:9px;background:#f7f8fa;font-size:14px}
 .mb-extra label{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700}
@@ -507,6 +524,17 @@ button.chip{cursor:pointer}
   </form>
 </dialog>
 
+<dialog id="dlg-pick" class="pick-dlg" aria-labelledby="pick-title">
+  <form class="dlg pick" id="pick-form" novalidate>
+    <h2 id="pick-title">Choose VIPs</h2>
+    <p id="pick-sub"></p>
+    <input id="pick-q" type="search" placeholder="Search names" aria-label="Search names" autocomplete="off" spellcheck="false">
+    <div class="pick-list" id="pick-list"></div>
+    <p class="warn" id="pick-warn" hidden></p>
+    <div class="pick-foot"><span class="n" id="pick-n"></span><button type="button" class="btn" data-close>Cancel</button><button type="submit" class="btn primary" id="pick-ok">Save</button></div>
+  </form>
+</dialog>
+
 <dialog id="dlg-menu" aria-labelledby="menu-title">
   <form class="dlg" id="menu-form" novalidate>
     <h2 id="menu-title">Menu choices</h2>
@@ -641,6 +669,10 @@ button.chip{cursor:pointer}
     { kind: 'sweet', label: 'Sweetheart table', note: 'For two' }
   ];
   var KIND_SEATS = { round: 8, round72: 10, long: 8, longh: 8, sweet: 2 };
+  /* The most chairs the venue's tables take: a 60 inch round 9, a 72 inch round 12,
+     an 8 foot table 4 on each side plus one on each end that isn't pushed against another table */
+  var KIND_MAX = { round: 9, round72: 12, long: 10, longh: 10 };
+  var SIDE_MAX = 4;
   function kindPhrase(k) { return { round: 'a 60 inch round', round72: 'a 72 inch round', long: 'a long table', longh: 'a long table turned sideways', sweet: 'a sweetheart table' }[k] || 'a table'; }
   function shapeIcon(kind) {
     var s = '<svg viewBox="0 0 40 40" width="38" height="38" aria-hidden="true" focusable="false">';
@@ -1943,13 +1975,25 @@ button.chip{cursor:pointer}
     var idle = { ok: false, text: d.kind === 'chair' ? 'Drop it on a + at ' + placeName(d.t) : 'Drop on a seat, a table or a +' };
     if (!tg) return idle;
     if (d.kind === 'chair') {
-      if (tg.type === 'slot' && tg.t === d.t) return { ok: true, text: 'Move this open seat here', run: function () { return moveChair(d.t, d.k, { j: tg.j, side: tg.side }); } };
+      if (tg.type === 'slot' && tg.t === d.t) {
+        var w0 = moveRoom(d.t, d.k, tg.side, true);
+        if (w0) return { ok: false, text: w0 };
+        return { ok: true, text: 'Move this open seat here', run: function () { return moveChair(d.t, d.k, { j: tg.j, side: tg.side }); } };
+      }
       return idle;
     }
     if (!g) return idle;
     var slot = tg.type === 'slot' ? { j: tg.j, side: tg.side } : null;
-    if (slot && tg.t === g.table && g.order <= seatsOf(g.table)) return { ok: true, text: 'Move ' + firstName(g.name) + '’s seat here', run: function () { return moveChair(g.table, g.order, slot); } };
-    if (slot) return { ok: true, text: 'Add a seat here ' + (tg.t === g.table ? '' : 'at ' + placeName(tg.t)), run: function () { return moveGuest(g.id, tg.t, null, { slot: slot }); } };
+    if (slot && tg.t === g.table && g.order <= seatsOf(g.table)) {
+      var w1 = moveRoom(g.table, g.order, tg.side, true);
+      if (w1) return { ok: false, text: w1 };
+      return { ok: true, text: 'Move ' + firstName(g.name) + '’s seat here', run: function () { return moveChair(g.table, g.order, slot); } };
+    }
+    if (slot) {
+      var lk = kindOf(tg.t) === 'long' || kindOf(tg.t) === 'longh', w2 = roomFor(tg.t, lk ? tg.side : null, true);
+      if (w2) return { ok: false, text: w2 };
+      return { ok: true, text: 'Add a seat here ' + (tg.t === g.table ? '' : 'at ' + placeName(tg.t)), run: function () { return moveGuest(g.id, tg.t, null, { slot: slot }); } };
+    }
     if (tg.type === 'seat') {
       if (tg.gid === g.id) return idle;
       if (tg.gid) { var q = S.guests.get(tg.gid); return q ? { ok: true, text: 'Swap with ' + q.name, run: function () { return swapGuests(g.id, q.id); } } : idle; }
@@ -2178,9 +2222,46 @@ button.chip{cursor:pointer}
     if (!model.long) return { j: cap + 1, side: null };
     var cnt = { t: 0, r: 0, b: 0, l: 0 };
     model.chairs.forEach(function (c) { cnt[c.side]++; });
-    var A = model.kind === 'long' ? 'r' : 't', B = model.kind === 'long' ? 'l' : 'b', side = cnt[A] <= cnt[B] ? A : B;
+    var A = model.kind === 'long' ? 'r' : 't', B = model.kind === 'long' ? 'l' : 'b', side = null;
+    /* the shorter side first, while it has room; then an open end */
+    (cnt[A] <= cnt[B] ? [A, B] : [B, A]).forEach(function (s) { if (!side && cnt[s] < SIDE_MAX) side = s; });
+    if (!side) (model.kind === 'long' ? ['b', 't'] : ['r', 'l']).forEach(function (s) { if (!side && !cnt[s] && !endBlocked(model.n, s)) side = s; });
+    if (!side) return null;
     var start = { t: 1, r: 1 + cnt.t, b: 1 + cnt.t + cnt.r, l: 1 + cnt.t + cnt.r + cnt.b };
     return { j: start[side] + cnt[side], side: side };
+  }
+  /* An end of a long table that is pushed up against another table has no room for a chair */
+  function endBlocked(n, side) {
+    var M = S.lay, L = (M && M.links) || {}, first = kindOf(n) === 'long' ? side === 't' : side === 'l';
+    if (first) return L[n] != null;
+    return !!(M && M.nums && M.nums.some(function (m) { return L[m] === n; }));
+  }
+  function isEndSide(kind, side) { return kind === 'long' ? side === 't' || side === 'b' : side === 'l' || side === 'r'; }
+  /* '' when one more chair fits at table n (on that side, for a long table); otherwise what to do instead */
+  function roomFor(n, side, short) {
+    var kind = kindOf(n), cap = seatsOf(n), P = PlaceName(n);
+    if (kind === 'round' && cap >= KIND_MAX.round) return short ? 'A 60 inch round fits 9 at most' : P + ' is a 60 inch round, which fits 9 at most. To seat 10 or more, change it to a 72 inch round: tap the table, then Change shape.';
+    if (kind === 'round72' && cap >= KIND_MAX.round72) return short ? 'A 72 inch round fits 12 at most' : P + ' is a 72 inch round, which fits 12 at most.';
+    if (kind !== 'long' && kind !== 'longh') return '';
+    var cnt = { t: 0, r: 0, b: 0, l: 0 };
+    chairModel(n).chairs.forEach(function (c) { if (c.side) cnt[c.side]++; });
+    if (side) {
+      if (isEndSide(kind, side)) {
+        if (cnt[side] >= 1) return short ? 'That end already has a chair' : 'That end of ' + placeName(n) + ' already has a chair.';
+        if (endBlocked(n, side)) return short ? 'That end is against another table' : 'That end of ' + placeName(n) + ' is pushed against another table.';
+        return '';
+      }
+      return cnt[side] >= SIDE_MAX ? (short ? 'That side already has 4 chairs' : 'That side of ' + placeName(n) + ' already has 4 chairs, the most an 8 foot table fits. Put the chair on an end instead.') : '';
+    }
+    var sides = kind === 'long' ? ['r', 'l'] : ['t', 'b'], ends = kind === 'long' ? ['t', 'b'] : ['l', 'r'];
+    var free = sides.some(function (s) { return cnt[s] < SIDE_MAX; }) || ends.some(function (s) { return !cnt[s] && !endBlocked(n, s); });
+    return free ? '' : short ? 'This table is full' : P + ' is full: 4 chairs on each side and one on each open end.';
+  }
+  /* Moving chair k of a long table to another side needs room on that side */
+  function moveRoom(n, k, side, short) {
+    var model = chairModel(n), ch = model.chairs[k - 1];
+    if (!model.long || !ch || ch.side === side) return '';
+    return roomFor(n, side, short);
   }
   /* Where a chair ended up, in words: "on the left side of Table 2", "at Table 5 between Ana and Ben" */
   function spotWords(model, j, side) {
@@ -2197,7 +2278,8 @@ button.chip{cursor:pointer}
   }
   function addChair(n, slot) {
     if (!canEdit()) { viewOnlyNote(); return Promise.resolve(); }
-    var model = chairModel(n);
+    var model = chairModel(n), why = roomFor(n, model.long ? slot.side : null);
+    if (why) { toast(why); return Promise.resolve(); }
     if (model.chairs.length >= 30) { toast(PlaceName(n) + ' already has 30 seats.'); return Promise.resolve(); }
     var j = Math.max(1, Math.min(model.chairs.length + 1, slot.j));
     model.chairs.splice(j - 1, 0, { side: model.long ? slot.side : null, g: null });
@@ -2218,6 +2300,8 @@ button.chip{cursor:pointer}
     var model = chairModel(n), ch = model.chairs[k - 1], j = slot.j;
     if (!ch) return Promise.resolve();
     if ((j === k || j === k + 1) && (!model.long || slot.side === ch.side)) { toast('That seat is already there.'); return Promise.resolve(); }
+    var whyM = moveRoom(n, k, slot.side);
+    if (whyM) { toast(whyM); return Promise.resolve(); }
     model.chairs.splice(k - 1, 1);
     if (j > k) j -= 1;
     model.chairs.splice(j - 1, 0, { side: model.long ? slot.side : null, g: ch.g });
@@ -2377,7 +2461,8 @@ button.chip{cursor:pointer}
     if (to && opts.slot) chosen = null;
     if (to && chosen == null) {
       if (!opts.addSeat && !opts.slot) return Promise.resolve();
-      var model = chairModel(to), slot = opts.slot || defaultSlot(model);
+      var model = chairModel(to), slot = opts.slot || defaultSlot(model), whyR = roomFor(to, opts.slot && model.long ? opts.slot.side : null);
+      if (whyR || !slot) { toast(whyR || PlaceName(to) + ' has no room for another chair.'); return Promise.resolve(); }
       if (model.chairs.length >= 30) { toast(PlaceName(to) + ' already has 30 seats.'); return Promise.resolve(); }
       model.over = model.over.filter(function (o) { return o.id !== id; });
       model.chairs.forEach(function (c) { if (c.g && c.g.id === id) c.g = null; });
@@ -2429,7 +2514,8 @@ button.chip{cursor:pointer}
     if (table > 0) {
       chosen = seatK && !seatMap(table).chairs[seatK - 1] ? seatK : freeChair(table);
       if (chosen == null) {
-        var model = chairModel(table), slot = defaultSlot(model);
+        var model = chairModel(table), slot = defaultSlot(model), whyA = roomFor(table);
+        if (whyA || !slot) { toast(whyA || PlaceName(table) + ' has no room for another chair.'); return Promise.resolve(); }
         model.chairs.splice(slot.j - 1, 0, { side: model.long ? slot.side : null, g: { id: id, name: name, table: 0, order: 0 } });
         snap = snapTable(table);
         writes = commitChairs(table, model);
@@ -2629,6 +2715,7 @@ button.chip{cursor:pointer}
     if (!t || !M || !M.free || !M.place[n]) return Promise.resolve();
     var from = kindOf(n);
     if (from === kind) return Promise.resolve();
+    if (KIND_MAX[kind] && seatsOf(n) > KIND_MAX[kind]) { toast(PlaceName(n) + ' has ' + seatsOf(n) + ' chairs, and ' + kindPhrase(kind) + ' fits ' + KIND_MAX[kind] + ' at most. Move people and remove chairs first.'); return Promise.resolve(); }
     var upd = {};
     upd[n] = { kind: kind, end: null, link: null, sides: null, x: r1(M.place[n].x), y: r1(M.place[n].y) };
     closeRow(n, M, upd, true);
@@ -2728,7 +2815,9 @@ button.chip{cursor:pointer}
   }
   function renderAtSeats(reset) {
     var sel = $('#at-seats'), cur = reset ? KIND_SEATS[atCtx.kind] : (+sel.value || KIND_SEATS[atCtx.kind]), h = '';
-    for (var i = 1; i <= 16; i++) h += '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + i + (i === 1 ? ' seat' : ' seats') + '</option>';
+    var mx = KIND_MAX[atCtx.kind] || 16;
+    if (cur > mx) cur = mx;
+    for (var i = 1; i <= mx; i++) h += '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + i + (i === 1 ? ' seat' : ' seats') + '</option>';
     sel.innerHTML = h;
   }
   $('#at-shapes').addEventListener('click', function (e) { var b = e.target.closest('[data-kind]'); if (!b) return; atCtx.kind = b.dataset.kind; renderAtShapes(); renderAtSeats(true); });
@@ -2773,7 +2862,7 @@ button.chip{cursor:pointer}
     $('#add-warn').hidden = true;
     $('#add-submit').textContent = 'Add guest';
     var opts = '<option value="0">Not seated yet</option>';
-    tableNums().forEach(function (n) { var o = openCount(n); opts += '<option value="' + n + '">' + PlaceName(n) + ' · ' + (o > 0 ? o + ' open' : 'full, adds a seat') + '</option>'; });
+    tableNums().forEach(function (n) { var o = openCount(n); opts += '<option value="' + n + '">' + PlaceName(n) + ' · ' + (o > 0 ? o + ' open' : roomFor(n) ? 'full' : 'full, adds a seat') + '</option>'; });
     $('#add-table').innerHTML = opts;
     $('#add-table').value = String(table || 0);
     openDialog($('#dlg-add'));
@@ -2794,8 +2883,11 @@ button.chip{cursor:pointer}
     S.fullCtx = { id: id, n: n };
     var seats = seatsOf(n), others = at(n);
     $('#full-title').textContent = PlaceName(n) + (seats ? ' is full' : ' has no seats yet');
-    $('#full-body').textContent = seats ? 'All ' + seats + ' seats are taken. Add one more chair, or swap ' + g.name + ' with someone who is already there.' : 'Add a seat so ' + g.name + ' can sit there.';
+    var whyF = roomFor(n);
+    $('#full-body').textContent = whyF ? 'All ' + seats + ' seats are taken. ' + whyF + (others.length ? ' You can still swap ' + g.name + ' with someone who is already there.' : '')
+      : seats ? 'All ' + seats + ' seats are taken. Add one more chair, or swap ' + g.name + ' with someone who is already there.' : 'Add a seat so ' + g.name + ' can sit there.';
     $('#full-add').textContent = 'Add a seat and move ' + g.name;
+    $('#full-add').hidden = !!whyF;
     $('#full-swap-label').hidden = !others.length;
     $('#full-swap-label').textContent = others.length ? 'Or swap with someone at ' + placeName(n) + '. They take ' + g.name + '’s spot ' + inPlace(g.table) + '.' : '';
     $('#full-swaps').innerHTML = others.map(function (x) { return '<button type="button" class="btn" data-swap="' + esc(x.id) + '">' + esc(x.name) + '</button>'; }).join('');
@@ -2822,6 +2914,7 @@ button.chip{cursor:pointer}
     var dup = null;
     S.guests.forEach(function (g) { if (!dup && norm(g.name) === norm(name)) dup = g; });
     if (dup && !S.addDup) { warn.textContent = dup.name + ' is already on the chart ' + inPlace(dup.table) + '. Add a second person with this name?'; warn.hidden = false; $('#add-submit').textContent = 'Add anyway'; S.addDup = true; return; }
+    if (table && freeChair(table) == null && roomFor(table)) { warn.textContent = roomFor(table) + ' Pick another table, or Not seated yet.'; warn.hidden = false; return; }
     closeDialog($('#dlg-add'));
     closePanel();
     addGuest(name, table, table && table === addCtx.t ? addCtx.k : null);
@@ -3005,6 +3098,60 @@ button.chip{cursor:pointer}
     return out;
   }
   function liveRules() { return (S.rules || []).filter(function (r) { return S.guests.has(r.a) && S.guests.has(r.b); }); }
+  /* Long tables pushed together in a row are one table to sit at */
+  function unitOf(n) {
+    var L = (S.lay && S.lay.links) || {}, guard = 0;
+    while (n && L[n] != null && guard++ < 60) n = L[n];
+    return n;
+  }
+  function unitTables(u) { return tableNums().filter(function (n) { return unitOf(n) === u; }); }
+  function tablesWords(list) {
+    var l = list.slice().sort(function (a, b) { return a - b; });
+    if (l.length === 1) return placeName(l[0]);
+    return 'Tables ' + l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1];
+  }
+  /* Three or more people joined by "same table" rules are a group */
+  function sameGroups() {
+    var rs = liveRules().filter(function (r) { return r.kind === 'same'; }), parent = new Map();
+    function find(x) { while (parent.get(x) !== x) { parent.set(x, parent.get(parent.get(x))); x = parent.get(x); } return x; }
+    function add(x) { if (!parent.has(x)) parent.set(x, x); }
+    rs.forEach(function (r) { add(r.a); add(r.b); var ra = find(r.a), rb = find(r.b); if (ra !== rb) parent.set(ra, rb); });
+    var comp = new Map();
+    parent.forEach(function (v, x) { var root = find(x); if (!comp.has(root)) comp.set(root, { group: true, members: [], rules: [] }); comp.get(root).members.push(x); });
+    rs.forEach(function (r) { comp.get(find(r.a)).rules.push(r); });
+    var out = [];
+    comp.forEach(function (c) {
+      if (c.members.length < 3) return;
+      c.members.sort(function (a, b) { return gname(a).localeCompare(gname(b)); });
+      c.key = c.members[0];
+      out.push(c);
+    });
+    out.sort(function (a, b) { return b.members.length - a.members.length || gname(a.key).localeCompare(gname(b.key)); });
+    return out;
+  }
+  /* What the planner lists: each group once, then the rules between two people */
+  function ruleItems() {
+    var groups = sameGroups(), inGroup = new Set(), items = groups.slice();
+    groups.forEach(function (g) { g.rules.forEach(function (r) { inGroup.add(r.id); }); });
+    liveRules().forEach(function (r) { if (!inGroup.has(r.id)) items.push({ rule: r }); });
+    return items;
+  }
+  function groupBroken(g, P) { return g.rules.some(function (r) { return ruleCost(r, P) > 0; }); }
+  function groupStatus(g, P) {
+    var byT = new Map(), units = new Set(), unseated = 0;
+    g.members.forEach(function (id) { var s = P.get(id); if (!s || !s.t) { unseated++; return; } byT.set(s.t, (byT.get(s.t) || 0) + 1); units.add(unitOf(s.t)); });
+    var tabs = Array.from(byT.keys());
+    if (!unseated && units.size === 1) return { ok: true, why: 'Together at ' + tablesWords(tabs) + (tabs.length > 1 ? ', pushed together' : '') };
+    var parts = Array.from(byT.entries()).sort(function (a, b) { return b[1] - a[1] || a[0] - b[0]; }).map(function (e) { return e[1] + ' at ' + placeName(e[0]); });
+    if (unseated) parts.push(unseated + ' not seated yet');
+    return { ok: false, why: 'Split up: ' + parts.join(', ') + '. The organizer can seat them together.' };
+  }
+  function countBroken(P) {
+    var n = 0, groups = sameGroups(), inGroup = new Set();
+    groups.forEach(function (g) { g.rules.forEach(function (r) { inGroup.add(r.id); }); if (groupBroken(g, P)) n++; });
+    liveRules().forEach(function (r) { if (!inGroup.has(r.id) && ruleCost(r, P) > 0) n++; });
+    return n;
+  }
   function gname(id) { var g = S.guests.get(id); return g ? g.name : 'someone'; }
 
   /* Which chairs are next to each other, from where the chairs are drawn */
@@ -3041,10 +3188,11 @@ button.chip{cursor:pointer}
     var a = P.get(r.a), b = P.get(r.b);
     if (!a || !b) return 0;
     var same = a.t > 0 && a.t === b.t, adj = same && a.k > 0 && b.k > 0 && nextTo(a.t, a.k, b.k);
+    var together = a.t > 0 && b.t > 0 && unitOf(a.t) === unitOf(b.t);
     if (r.kind === 'next') return adj ? 0 : same ? 5 : 10;
-    if (r.kind === 'same') return same ? 0 : 10;
+    if (r.kind === 'same') return together ? 0 : 10;
     if (r.kind === 'notnext') return adj ? 8 : 0;
-    if (r.kind === 'apart') return same ? 10 : 0;
+    if (r.kind === 'apart') return together ? 10 : 0;
     return 0;
   }
   function ruleWhy(r, P) {
@@ -3053,9 +3201,9 @@ button.chip{cursor:pointer}
     var ok = ruleCost(r, P) === 0;
     if ((r.kind === 'next' || r.kind === 'same') && (!a.t || !b.t)) return (!a.t ? A : B) + ' isn’t seated yet';
     if (r.kind === 'next') return ok ? 'Side by side at ' + placeName(a.t) : a.t === b.t ? 'Both at ' + placeName(a.t) + ', but not side by side' : placeName(a.t) + ' and ' + placeName(b.t);
-    if (r.kind === 'same') return ok ? 'Both at ' + placeName(a.t) : placeName(a.t) + ' and ' + placeName(b.t);
+    if (r.kind === 'same') return ok ? (a.t === b.t ? 'Both at ' + placeName(a.t) : 'At ' + tablesWords([a.t, b.t]) + ', pushed together') : placeName(a.t) + ' and ' + placeName(b.t);
     if (r.kind === 'notnext') return ok ? (a.t && a.t === b.t ? 'Both at ' + placeName(a.t) + ', not side by side' : 'Not side by side') : 'Side by side at ' + placeName(a.t);
-    if (r.kind === 'apart') return ok ? (a.t && b.t ? placeName(a.t) + ' and ' + placeName(b.t) : 'Not at the same table') : 'Both at ' + placeName(a.t);
+    if (r.kind === 'apart') return ok ? (a.t && b.t ? placeName(a.t) + ' and ' + placeName(b.t) : 'Not at the same table') : a.t === b.t ? 'Both at ' + placeName(a.t) : 'At ' + tablesWords([a.t, b.t]) + ', which are pushed together';
     return '';
   }
   /* "Up front": the tables closest to the sweetheart table or the dance floor, enough of them to seat every VIP */
@@ -3093,9 +3241,10 @@ button.chip{cursor:pointer}
     var P = seating().pos;
     rs.forEach(function (r) {
       if (ruleCost(r, P) === 0) return;
-      out.rules++; out.list.push(r);
+      out.list.push(r);
       [r.a, r.b].forEach(function (id) { out.guests.add(id); var s = P.get(id); if (s && s.t) out.tables.add(s.t); });
     });
+    out.rules = countBroken(P);
     return out;
   }
 
@@ -3104,6 +3253,7 @@ button.chip{cursor:pointer}
     var B = seating(), pos = B.pos, occ = B.occ, start = new Map(), F = frontInfo(), rules = liveRules(), byG = new Map();
     pos.forEach(function (s, id) { start.set(id, { t: s.t, k: s.k }); });
     rules.forEach(function (r) { [r.a, r.b].forEach(function (id) { if (!byG.has(id)) byG.set(id, []); byG.get(id).push(r); }); });
+    var lockUnit = new Map(), groupWhy = new Map(), groupNotes = [];
     function movable(id) {
       var s = pos.get(id), s0 = start.get(id);
       if (!s || !S.guests.has(id)) return false;
@@ -3130,6 +3280,9 @@ button.chip{cursor:pointer}
       var sp = pos.get(p), q = occ.get(spot.t)[spot.k];
       if (q === p || (q && (!movable(q) || q === keep))) return null;
       if (q && !sp.t) return null;
+      /* people seated as a group stay at their table or row */
+      if (lockUnit.has(p) && unitOf(spot.t) !== lockUnit.get(p)) return null;
+      if (q && lockUnit.has(q) && (!sp.t || unitOf(sp.t) !== lockUnit.get(q))) return null;
       var ids = q ? [p, q] : [p], list = aff(ids), before = rc(list) + gc(p) + gc(q);
       put(p, sp, q, spot);
       var after = rc(list) + gc(p) + gc(q);
@@ -3144,6 +3297,77 @@ button.chip{cursor:pointer}
       return s;
     }
     function partners(p) { return (byG.get(p) || []).filter(function (r) { return r.kind === 'next' || r.kind === 'same'; }).map(function (r) { return { id: r.a === p ? r.b : r.a, kind: r.kind }; }).filter(function (x) { return movable(x.id); }); }
+    /* Groups first, biggest first: the whole group at one table, or one row of long tables pushed together.
+       Whoever sat in those chairs takes the chairs the group leaves, people from one table kept together. */
+    if (!scopeT) {
+      var units = organizerUnits();
+      sameGroups().forEach(function (G) {
+        var mem = G.members.filter(function (id) { return S.guests.has(id); }), N = mem.length, memSet = new Set(mem);
+        if (N < 3) return;
+        var us = new Set(), unseated = 0;
+        mem.forEach(function (id) { var s = pos.get(id); if (!s || !s.t) unseated++; else us.add(unitOf(s.t)); });
+        if (!unseated && us.size === 1) { var u0 = Array.from(us)[0]; mem.forEach(function (id) { lockUnit.set(id, u0); }); return; }
+        if (mem.some(function (id) { return !movable(id); })) { groupNotes.push({ n: N, stuck: true }); return; }
+        var empty = 0;
+        spots.forEach(function (sp) { if (!occ.get(sp.t)[sp.k]) empty++; });
+        if (unseated > empty) { groupNotes.push({ n: N, nochairs: true }); return; }
+        var best = null;
+        units.forEach(function (U) {
+          var C = U.chairs, L = C.length;
+          if (L < N) return;
+          for (var s0 = 0; s0 < (U.round ? L : L - N + 1); s0++) {
+            var inside = 0, others = 0, ok = true, near = 0;
+            for (var i = 0; i < N; i++) {
+              var c = C[(s0 + i) % L], q = occ.get(c.t)[c.k];
+              if (!q) continue;
+              if (memSet.has(q)) { inside++; continue; }
+              if (!movable(q) || lockUnit.has(q)) { ok = false; break; }
+              others++;
+            }
+            if (!ok) continue;
+            mem.forEach(function (id) { var s = pos.get(id); if (s && s.t && unitOf(s.t) === U.u) near++; });
+            var cost = (N - inside) - 0.3 * (near - inside) + 1.2 * others + (U.round ? 0 : 0.05);
+            if (!best || cost < best.cost - 1e-9) best = { cost: cost, U: U, s0: s0 };
+          }
+        });
+        if (!best) { groupNotes.push({ n: N, nofit: true }); return; }
+        var U = best.U, win = [], inWin = new Set();
+        for (var i = 0; i < N; i++) { var c = U.chairs[(best.s0 + i) % U.chairs.length]; win.push(c); inWin.add(c.t + ':' + c.k); }
+        /* out of the window: whoever is not in the group */
+        var evicted = [];
+        win.forEach(function (c) { var q = occ.get(c.t)[c.k]; if (q && !memSet.has(q)) { evicted.push(q); occ.get(c.t)[c.k] = null; pos.set(q, { t: 0, k: 0 }); } });
+        /* in: group members not already there, into the free chairs of the window */
+        var freeIn = win.filter(function (c) { return !occ.get(c.t)[c.k]; });
+        mem.forEach(function (id) {
+          var s = pos.get(id);
+          if (s && s.t && inWin.has(s.t + ':' + s.k)) return;
+          var c = freeIn.shift();
+          if (s && s.t && s.k) occ.get(s.t)[s.k] = null;
+          occ.get(c.t)[c.k] = id;
+          pos.set(id, { t: c.t, k: c.k });
+        });
+        /* the people who were there take empty chairs: first in the same row, then where the group came from, together */
+        var byFrom = new Map();
+        evicted.forEach(function (q) { var f = start.get(q).t; if (!byFrom.has(f)) byFrom.set(f, []); byFrom.get(f).push(q); });
+        Array.from(byFrom.values()).sort(function (a, b) { return b.length - a.length; }).forEach(function (grp) {
+          var rest = grp.slice();
+          while (rest.length) {
+            var E = new Map();
+            spots.forEach(function (sp) { if (!occ.get(sp.t)[sp.k] && !inWin.has(sp.t + ':' + sp.k)) { if (!E.has(sp.t)) E.set(sp.t, []); E.get(sp.t).push(sp); } });
+            var pick = null, pickScore = -Infinity;
+            E.forEach(function (list, tn) {
+              var sc = Math.min(list.length, rest.length) * 10 + (unitOf(tn) === U.u ? 5 : 0) + list.length * 0.01;
+              if (sc > pickScore) { pickScore = sc; pick = tn; }
+            });
+            if (pick == null) break;
+            var list = E.get(pick);
+            while (rest.length && list.length) { var q2 = rest.shift(), sp2 = list.shift(); occ.get(sp2.t)[sp2.k] = q2; pos.set(q2, { t: sp2.t, k: sp2.k }); groupWhy.set(q2, 'to make room for a group of ' + N); }
+          }
+        });
+        mem.forEach(function (id) { lockUnit.set(id, U.u); groupWhy.set(id, 'with their group of ' + N); });
+        groupNotes.push({ n: N, tables: win.map(function (c) { return c.t; }).filter(function (v, i, a) { return a.indexOf(v) === i; }) });
+      });
+    }
     var guard = 0;
     while (guard++ < 300) {
       var probs = problems(), best = null;
@@ -3178,17 +3402,42 @@ button.chip{cursor:pointer}
     pos.forEach(function (s, id) { var a = start.get(id); if (a && (a.t !== s.t || a.k !== s.k)) moves.push({ id: id, from: a, to: { t: s.t, k: s.k } }); });
     var P0 = B.pos, before = { rules: 0, vips: 0 }, after = { rules: 0, vips: 0 };
     var P0map = new Map(); start.forEach(function (s, id) { P0map.set(id, s); });
-    rules.forEach(function (r) { if (ruleCost(r, P0map) > 0) before.rules++; if (ruleCost(r, pos) > 0) after.rules++; });
+    before.rules = countBroken(P0map); after.rules = countBroken(pos);
     S.guests.forEach(function (g) { if (g.vip && vipCost(g, P0map.get(g.id), F) > 0) before.vips++; if (g.vip && vipCost(g, pos.get(g.id), F) > 0) after.vips++; });
     moves.forEach(function (m) {
       var why = [];
       (byG.get(m.id) || []).forEach(function (r) { if (ruleCost(r, P0map) > 0 && ruleCost(r, pos) === 0) why.push((r.kind === 'next' ? 'next to ' : r.kind === 'same' ? 'with ' : 'away from ') + gname(r.a === m.id ? r.b : r.a)); });
       var g = S.guests.get(m.id);
       if (g && g.vip && vipCost(g, P0map.get(m.id), F) > 0 && vipCost(g, pos.get(m.id), F) === 0) why.push('VIP, now up front');
+      if (groupWhy.has(m.id) && !why.length) why.push(groupWhy.get(m.id));
+      else if (groupWhy.has(m.id) && /^with their group/.test(groupWhy.get(m.id))) why = [groupWhy.get(m.id)];
       m.why = why.length ? why.join(', ') : 'to make room';
     });
     moves.sort(function (a, b) { return (a.why === 'to make room') - (b.why === 'to make room') || gname(a.id).localeCompare(gname(b.id)); });
-    return { moves: moves, before: before, after: after, scopeT: scopeT || 0, rules: rules.length, vipsTotal: F.vips, front: F.order.filter(function (n) { return F.front.has(n); }) };
+    return { moves: moves, before: before, after: after, scopeT: scopeT || 0, rules: rules.length, vipsTotal: F.vips, front: F.order.filter(function (n) { return F.front.has(n); }), groups: groupNotes };
+  }
+  function organizerUnits() {
+    var M = S.lay, by = new Map(), out = [];
+    if (!M || !M.tabs) return out;
+    tableNums().forEach(function (n) {
+      if (isSweet(n) || !M.tabs[n] || !M.place[n]) return;
+      var u = unitOf(n);
+      if (!by.has(u)) by.set(u, { u: u, tables: [], chairs: [], round: false });
+      by.get(u).tables.push(n);
+    });
+    by.forEach(function (U) {
+      var k0 = M.tabs[U.tables[0]].t.kind;
+      U.round = U.tables.length === 1 && (k0 === 'round' || k0 === 'round72');
+      U.tables.forEach(function (n) {
+        var tb = M.tabs[n], p = M.place[n];
+        tb.seats.forEach(function (s) { if (s.state !== 'over' && s.k <= seatsOf(n)) U.chairs.push({ t: n, k: s.k, x: p.x + s.cx, y: p.y + s.cy, a: Math.atan2(s.cx, -s.cy) }); });
+      });
+      if (U.round) U.chairs.sort(function (a, b) { return a.a - b.a; });
+      else if (k0 === 'longh') U.chairs.sort(function (a, b) { return a.x - b.x || a.y - b.y; });
+      else U.chairs.sort(function (a, b) { return a.y - b.y || a.x - b.x; });
+      out.push(U);
+    });
+    return out;
   }
   function moveWords(m) {
     var g = gname(m.id);
@@ -3206,20 +3455,29 @@ button.chip{cursor:pointer}
       sum.textContent = 'Add a rule or mark a VIP first. The organizer uses them to decide who sits where. Open the Planner at the top to add them.';
       apply.hidden = true;
     } else if (!plan.moves.length) {
-      sum.textContent = plan.before.rules || plan.before.vips
+      sum.textContent = (plan.before.rules || plan.before.vips
         ? 'No better arrangement found without breaking another rule. Try adding a seat where it helps, or loosen a rule.'
-        : 'Nothing to change. Everyone already follows your rules' + (plan.vipsTotal ? ' and every VIP is up front.' : '.');
+        : 'Nothing to change. Everyone already follows your rules' + (plan.vipsTotal ? ' and every VIP is up front.' : '.')) + groupProblems(plan);
       apply.hidden = true;
     } else {
       var parts = [];
       if (plan.before.rules) parts.push('fixes ' + (plan.before.rules - plan.after.rules) + ' of ' + plan.before.rules + ' broken rule' + (plan.before.rules === 1 ? '' : 's'));
       if (plan.before.vips) parts.push('brings ' + (plan.before.vips - plan.after.vips) + ' of ' + plan.before.vips + ' VIP' + (plan.before.vips === 1 ? '' : 's') + ' up front');
       var txt = (parts.length ? parts.join(' and ') : 'tidies things up') + ' by moving ' + plan.moves.length + (plan.moves.length === 1 ? ' person.' : ' people.');
-      sum.textContent = txt.charAt(0).toUpperCase() + txt.slice(1) + ' Undo puts everyone back.';
+      var gtxt = (plan.groups || []).filter(function (x) { return x.tables; }).map(function (x) { return 'Seats the group of ' + x.n + ' together at ' + tablesWords(x.tables) + '. '; }).join('');
+      sum.textContent = gtxt + txt.charAt(0).toUpperCase() + txt.slice(1) + ' Undo puts everyone back.' + groupProblems(plan);
       list.innerHTML = plan.moves.map(function (m) { return '<li>' + esc(moveWords(m)) + '<span class="why">' + esc(m.why) + '</span></li>'; }).join('');
       apply.hidden = false;
     }
     openDialog($('#dlg-org'));
+  }
+  function groupProblems(plan) {
+    return (plan.groups || []).map(function (x) {
+      if (x.nofit) return ' No table has room for the group of ' + x.n + '. Push two long tables together, or change a table to a 72 inch round and give it more chairs, then run the organizer again.';
+      if (x.nochairs) return ' There aren’t enough open chairs to seat everyone in the group of ' + x.n + '. Add chairs first.';
+      if (x.stuck) return ' Someone in the group of ' + x.n + ' has no chair or sits at the sweetheart table, so the organizer left that group alone.';
+      return '';
+    }).join('');
   }
   $('#org-apply').addEventListener('click', function () {
     var plan = S.orgPlan;
@@ -3466,6 +3724,139 @@ button.chip{cursor:pointer}
     setGuest(id, { vip: true }, 'Marked ' + g.name + ' as a VIP', 'VIP for ' + g.name).then(function () { okm.textContent = g.name + ' is a VIP now. Add another or close.'; okm.hidden = false; $('#vip-name').value = ''; });
   });
 
+  /* ---------- Checking off several guests at once: VIPs, or a group that sits together ---------- */
+  var pickCtx = { mode: 'vip', sel: new Set(), group: null };
+  function openPick(mode, group) {
+    if (!canEdit()) { viewOnlyNote(); return; }
+    derive();
+    pickCtx.mode = mode; pickCtx.group = group || null; pickCtx.sel = new Set();
+    if (mode === 'vip') S.guests.forEach(function (g) { if (g.vip) pickCtx.sel.add(g.id); });
+    if (group) group.members.forEach(function (id) { pickCtx.sel.add(id); });
+    $('#pick-title').textContent = mode === 'vip' ? 'Choose VIPs' : group ? 'Edit the group of ' + group.members.length : 'Seat a group together';
+    $('#pick-sub').textContent = mode === 'vip' ? 'Check everyone who should sit up front. Checking a table checks everyone at it.'
+      : 'Check everyone who should sit together. A group too big for a round table goes to a long table, or two pushed together, when you run the organizer.';
+    $('#pick-q').value = '';
+    $('#pick-warn').hidden = true;
+    renderPick();
+    openDialog($('#dlg-pick'));
+    if (fineMQ.matches) setTimeout(function () { try { $('#pick-q').focus(); } catch (e) {} }, 60);
+  }
+  function pickPeople(n) {
+    var l = at(n).slice();
+    if (!n) l.sort(function (a, b) { return a.name.localeCompare(b.name); });
+    return l;
+  }
+  function renderPick() {
+    var q = norm($('#pick-q').value || ''), h = '', inOther = new Map();
+    if (pickCtx.mode === 'group') sameGroups().forEach(function (g) { if (pickCtx.group && g.key === pickCtx.group.key) return; g.members.forEach(function (id) { inOther.set(id, g.members.length); }); });
+    tableNums().concat([0]).forEach(function (n) {
+      var people = pickPeople(n);
+      if (!people.length) return;
+      var shown = q ? people.filter(function (g) { return norm(g.name).indexOf(q) !== -1; }) : people;
+      if (!shown.length) return;
+      h += '<div class="pick-t"><label class="pick-th"><input type="checkbox" data-pt="' + n + '">' + esc(n ? PlaceName(n) : 'Not seated yet') + '<span class="c">' + people.length + '</span></label>';
+      shown.forEach(function (g) {
+        h += '<label class="pick-g"><input type="checkbox" data-pg="' + esc(g.id) + '"' + (pickCtx.sel.has(g.id) ? ' checked' : '') + '>' + esc(g.name) +
+          (inOther.has(g.id) ? '<span class="note">in a group of ' + inOther.get(g.id) + '</span>' : '') + '</label>';
+      });
+      h += '</div>';
+    });
+    var list = $('#pick-list'), top = list.scrollTop;
+    list.innerHTML = h || '<p class="pick-none">No guest matches that.</p>';
+    list.scrollTop = top;
+    syncPick();
+  }
+  function syncPick() {
+    $('#pick-list').querySelectorAll('[data-pt]').forEach(function (b) {
+      var ppl = pickPeople(+b.dataset.pt), n = ppl.filter(function (g) { return pickCtx.sel.has(g.id); }).length;
+      b.checked = !!ppl.length && n === ppl.length;
+      b.indeterminate = n > 0 && n < ppl.length;
+    });
+    var c = pickCtx.sel.size;
+    $('#pick-n').textContent = c + (c === 1 ? ' person' : ' people') + ' checked';
+    $('#pick-ok').textContent = pickCtx.mode === 'vip' ? 'Save VIPs' : 'Save group';
+  }
+  $('#pick-q').addEventListener('input', renderPick);
+  $('#pick-list').addEventListener('change', function (e) {
+    var b = e.target;
+    if (!(b instanceof HTMLInputElement)) return;
+    if (b.dataset.pg) { if (b.checked) pickCtx.sel.add(b.dataset.pg); else pickCtx.sel.delete(b.dataset.pg); }
+    else if (b.dataset.pt != null) {
+      var on = b.checked, ids = pickPeople(+b.dataset.pt).map(function (g) { return g.id; });
+      ids.forEach(function (id) { if (on) pickCtx.sel.add(id); else pickCtx.sel.delete(id); });
+      var box = b.closest('.pick-t');
+      if (box) box.querySelectorAll('[data-pg]').forEach(function (x) { x.checked = on; });
+    }
+    $('#pick-warn').hidden = true;
+    syncPick();
+  });
+  $('#pick-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var sel = Array.from(pickCtx.sel).filter(function (id) { return S.guests.has(id); }), warn = $('#pick-warn');
+    if (pickCtx.mode === 'vip') { closeDialog($('#dlg-pick')); saveVips(sel); return; }
+    if (sel.length < 2) { warn.textContent = 'Check at least two people.'; warn.hidden = false; return; }
+    closeDialog($('#dlg-pick'));
+    saveGroup(sel, pickCtx.group);
+  });
+  function saveVips(sel) {
+    var want = new Set(sel), on = [], off = [];
+    S.guests.forEach(function (g) { if (want.has(g.id) && !g.vip) on.push(g.id); else if (!want.has(g.id) && g.vip) off.push(g.id); });
+    if (!on.length && !off.length) { toast('No changes to the VIP list.'); return Promise.resolve(); }
+    return guarded(function () {
+      on.forEach(function (id) { gref(id).update({ vip: true }); });
+      off.forEach(function (id) { gref(id).update({ vip: false }); });
+    }).then(function (ok) {
+      if (!ok) return;
+      var words = [on.length ? (on.length === 1 ? 'marked ' + gname(on[0]) + ' as a VIP' : 'marked ' + on.length + ' guests as VIPs') : '', off.length ? (off.length === 1 ? 'took ' + gname(off[0]) + ' off the VIP list' : 'took ' + off.length + ' off the VIP list') : ''].filter(Boolean).join(' and ');
+      words = words.charAt(0).toUpperCase() + words.slice(1);
+      log(words);
+      pushUndo('the VIP list', function () {
+        on.forEach(function (id) { if (S.guests.has(id)) gref(id).update({ vip: false }); });
+        off.forEach(function (id) { if (S.guests.has(id)) gref(id).update({ vip: true }); });
+        log('Undo: put the VIP list back');
+        return 'The VIP list is back how it was.';
+      });
+      toast(words + '.', true);
+    });
+  }
+  function saveGroup(sel, old) {
+    var oldRules = old ? old.rules.map(function (r) { return { id: r.id, a: r.a, b: r.b, kind: r.kind }; }) : [];
+    var oldIds = new Set(oldRules.map(function (r) { return r.id; }));
+    sel = sel.slice().sort(function (a, b) { return gname(a).localeCompare(gname(b)); });
+    var hub = sel[0], have = new Set();
+    liveRules().forEach(function (r) { if (r.kind === 'same' && !oldIds.has(r.id)) have.add([r.a, r.b].sort().join('|')); });
+    var adds = sel.slice(1).filter(function (id) { return !have.has([hub, id].sort().join('|')); });
+    var refs = adds.map(function () { return S.db.collection('rules').doc(); });
+    var names = sel.map(gname);
+    return guarded(function () {
+      oldRules.forEach(function (r) { S.db.doc('rules/' + r.id).delete(); });
+      adds.forEach(function (id, i) { refs[i].set({ a: hub, b: id, kind: 'same' }); });
+    }).then(function (ok) {
+      if (!ok) return;
+      log((old ? 'Changed a group. ' : 'Added a group. ') + 'These ' + sel.length + ' sit together: ' + names.join(', '));
+      pushUndo(old ? 'the group change' : 'the new group', function () {
+        refs.forEach(function (rf) { S.db.doc('rules/' + rf.id).delete(); });
+        oldRules.forEach(function (r) { if (S.guests.has(r.a) && S.guests.has(r.b)) S.db.doc('rules/' + r.id).set({ a: r.a, b: r.b, kind: r.kind }); });
+        log('Undo: put the groups back how they were');
+        return old ? 'The group is back how it was.' : 'Took the group away.';
+      });
+      toast((old ? 'Saved the group of ' : 'Added a group of ') + sel.length + '. Run the organizer to seat them together.', true);
+    });
+  }
+  function deleteGroup(g) {
+    var keep = g.rules.map(function (r) { return { id: r.id, a: r.a, b: r.b, kind: r.kind }; }), n = g.members.length, names = g.members.map(gname);
+    return guarded(function () { keep.forEach(function (r) { S.db.doc('rules/' + r.id).delete(); }); }).then(function (ok) {
+      if (!ok) return;
+      log('Removed the group of ' + n + ': ' + names.join(', '));
+      pushUndo('removing the group', function () {
+        keep.forEach(function (r) { if (S.guests.has(r.a) && S.guests.has(r.b)) S.db.doc('rules/' + r.id).set({ a: r.a, b: r.b, kind: r.kind }); });
+        log('Undo: put the group of ' + n + ' back');
+        return 'The group is back.';
+      });
+      toast('Removed the group of ' + n + '.', true);
+    });
+  }
+
   /* ---------- Meals ---------- */
   function openMenu() {
     if (!canEdit()) { viewOnlyNote(); return; }
@@ -3580,16 +3971,23 @@ button.chip{cursor:pointer}
       : '<p class="org-status ok">Everything follows your rules' + (vips.length ? ' and every VIP is up front' : '') + '.</p>';
     h += '<section class="pl-sec"><h3>Seat organizer</h3><p class="sub">Suggests the fewest moves that keep your rules and put VIPs up front. You see the list before anything changes.</p>' + status +
       (ed ? '<button type="button" class="btn primary wide" data-pl="organize">Organize the whole room</button>' : '') + '</section>';
-    h += '<section class="pl-sec"><div class="sec-head"><h3>Rules (' + rules.length + ')</h3>' + (ed ? '<button type="button" class="btn small" data-pl="addrule">Add a rule</button>' : '') + '</div><ul class="plist">';
-    if (!rules.length) h += '<li class="empty">Couples or families who should sit together, or people to keep apart. Tap a name on the chart to add one for them.</li>';
-    rules.forEach(function (r) {
-      var ok = ruleCost(r, P) === 0;
+    var items = ruleItems();
+    h += '<section class="pl-sec"><div class="sec-head"><h3>Rules (' + items.length + ')</h3>' + (ed ? '<div class="sec-btns"><button type="button" class="btn small" data-pl="addgroup">Add a group</button><button type="button" class="btn small" data-pl="addrule">Add a rule</button></div>' : '') + '</div><ul class="plist">';
+    if (!items.length) h += '<li class="empty">Couples or families who should sit together, or people to keep apart. Add a group to keep several people at one table. Tap a name on the chart to add a rule for them.</li>';
+    items.forEach(function (it) {
+      if (it.group) {
+        var gs = groupStatus(it, P);
+        h += '<li class="' + (gs.ok ? 'ok' : 'bad') + '"><div><span><b>Group of ' + it.members.length + '</b></span><span class="grp-names">' + esc(it.members.map(gname).join(', ')) + '</span><span class="st">' + (gs.ok ? 'OK: ' : 'Broken: ') + esc(gs.why) + '</span></div>' +
+          (ed ? '<button type="button" class="btn small ed" data-editgroup="' + esc(it.key) + '">Edit</button><button type="button" class="x" data-delgroup="' + esc(it.key) + '" aria-label="Remove the group of ' + it.members.length + '">' + X + '</button>' : '') + '</li>';
+        return;
+      }
+      var r = it.rule, ok = ruleCost(r, P) === 0;
       h += '<li class="' + (ok ? 'ok' : 'bad') + '"><div><span><b>' + esc(gname(r.a)) + '</b> and <b>' + esc(gname(r.b)) + '</b></span><span class="k">' + esc(RULES[r.kind].label) + '</span><span class="st">' + (ok ? 'OK: ' : 'Broken: ') + esc(ruleWhy(r, P)) + '</span></div>' +
         (ed ? '<button type="button" class="x" data-delrule="' + esc(r.id) + '" aria-label="Remove the rule for ' + esc(gname(r.a)) + ' and ' + esc(gname(r.b)) + '">' + X + '</button>' : '') + '</li>';
     });
     h += '</ul></section>';
     var frontNames = F.order.filter(function (n) { return F.front.has(n); }).sort(function (a, b) { return a - b; });
-    h += '<section class="pl-sec"><div class="sec-head"><h3>VIP guests (' + vips.length + ')</h3>' + (ed ? '<button type="button" class="btn small" data-pl="addvip">Add a VIP</button>' : '') + '</div>' +
+    h += '<section class="pl-sec"><div class="sec-head"><h3>VIP guests (' + vips.length + ')</h3>' + (ed ? '<button type="button" class="btn small" data-pl="addvip">Choose VIPs</button>' : '') + '</div>' +
       '<p class="sub">' + (frontNames.length ? 'Up front means ' + (frontNames.length === 1 ? 'Table ' + frontNames[0] : 'Tables ' + frontNames.slice(0, -1).join(', ') + ' and ' + frontNames[frontNames.length - 1]) + ', the closest to you two and the dance floor.' : 'VIPs get the tables closest to you two and the dance floor.') + '</p><ul class="plist">';
     if (!vips.length) h += '<li class="empty">Parents, grandparents, the wedding party. Tap a name on the chart and choose Mark as VIP, or add them here.</li>';
     vips.forEach(function (g) {
@@ -3626,11 +4024,15 @@ button.chip{cursor:pointer}
   $('#btn-planner').addEventListener('click', function () { if (S.plOpen) closePlanner(); else openPlanner(); });
   $('#pl-close').addEventListener('click', closePlanner);
   $('#pl-body').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-pl], [data-delrule], [data-unvip], [data-goto-t]');
+    var b = e.target.closest('[data-pl], [data-delrule], [data-unvip], [data-goto-t], [data-editgroup], [data-delgroup]');
     if (!b) return;
+    var grp = b.dataset.editgroup || b.dataset.delgroup ? sameGroups().filter(function (x) { return x.key === (b.dataset.editgroup || b.dataset.delgroup); })[0] : null;
     if (b.dataset.pl === 'organize') openOrganizer(0);
     else if (b.dataset.pl === 'addrule') openRule(null);
-    else if (b.dataset.pl === 'addvip') openVip();
+    else if (b.dataset.pl === 'addgroup') openPick('group');
+    else if (b.dataset.editgroup) { if (grp) openPick('group', grp); }
+    else if (b.dataset.delgroup) { if (grp) deleteGroup(grp); }
+    else if (b.dataset.pl === 'addvip') openPick('vip');
     else if (b.dataset.pl === 'menu') openMenu();
     else if (b.dataset.pl === 'paste') openPaste();
     else if (b.dataset.delrule) deleteRule(b.dataset.delrule);

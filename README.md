@@ -1,6 +1,6 @@
 # Wedding seating chart
 
-The venue floor plan with every guest's name at their chair. Anyone with the family link can open it on a phone or computer, move people, add or remove seats and put them where they belong, and move, reshape, add or remove tables. The Planner button shows guest counts and meal totals, keeps seating rules (who sits next to whom, who sits apart), marks VIPs who belong up front, and runs a seat organizer that suggests the fewest moves to make it all work. Nobody needs an account.
+The venue floor plan with every guest's name at their chair. Anyone with the family link can open it on a phone or computer, move people, add or remove seats and put them where they belong, and move, reshape, add or remove tables. The Planner button shows guest counts and meal totals, keeps seating rules (who sits next to whom, who sits apart, groups that sit together), marks VIPs who belong up front, and runs a seat organizer that suggests the fewest moves to make it all work. The chart follows the venue's limits: a 60 inch round seats up to 9, a 72 inch round up to 12, and an 8 foot table 4 per side plus one on each open end. Nobody needs an account.
 
 ## How it fits together
 
