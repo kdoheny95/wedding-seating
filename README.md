@@ -1,6 +1,6 @@
 # Wedding seating chart
 
-The venue floor plan with every guest's name at their chair. Anyone with the family link can open it on a phone or computer, move people, add or remove seats and put them where they belong, and move, reshape, add or remove tables. Nobody needs an account.
+The venue floor plan with every guest's name at their chair. Anyone with the family link can open it on a phone or computer, move people, add or remove seats and put them where they belong, and move, reshape, add or remove tables. The Planner button shows guest counts and meal totals, keeps seating rules (who sits next to whom, who sits apart), marks VIPs who belong up front, and runs a seat organizer that suggests the fewest moves to make it all work. Nobody needs an account.
 
 ## How it fits together
 
@@ -9,6 +9,7 @@ The venue floor plan with every guest's name at their chair. Anyone with the fam
 - Railway runs `server.js`, which only serves the page. This repo holds no guest data and no secrets.
 - Every few seconds the page checks whether someone else changed something, so everyone sees the same chart.
 - Each table's spot on the floor is saved in `wedding.seat_tables` (`x`, `y`), along with its shape and, for long tables, how many chairs are on each side (`sides`). The outline of the room the spots are measured against is saved once in `wedding.settings.meta.room`.
+- Meal choices and VIPs are saved on each guest (`meal`, `vip`), the menu in `wedding.settings.meta.meals`, and seating rules in `wedding.rules`.
 
 ## The family link
 
@@ -41,4 +42,4 @@ drop function if exists public.wedding_state(text), public.wedding_version(text)
 drop schema if exists wedding cascade;
 ```
 
-To rebuild the database side, run the files in `supabase/` in this order: `wedding_seating.sql`, `wedding_seating_tables.sql`, `wedding_seating_chairs.sql`.
+To rebuild the database side, run the files in `supabase/` in this order: `wedding_seating.sql`, `wedding_seating_tables.sql`, `wedding_seating_chairs.sql`, `wedding_seating_planner.sql`.
