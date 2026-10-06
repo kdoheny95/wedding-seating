@@ -8,7 +8,7 @@ The venue floor plan with every guest's name at their chair. Anyone with the fam
 - The seating lives in Supabase, in the `wedding` schema of the DNA Automate project. The API can't read that schema directly. The page goes through three functions (`wedding_state`, `wedding_version` and `wedding_apply`), and each one checks the code at the end of the family link before it does anything.
 - Railway runs `server.js`, which only serves the page. This repo holds no guest data and no secrets.
 - Every few seconds the page checks whether someone else changed something, so everyone sees the same chart.
-- Each table's spot on the floor is saved in `wedding.seat_tables` (`x`, `y`), along with its shape and, for long tables, how many chairs are on each side (`sides`). The outline of the room the spots are measured against is saved once in `wedding.settings.meta.room`.
+- Each table's spot on the floor is saved in `wedding.seat_tables` (`x`, `y`), along with its shape and, for long tables, how many chairs are on each side (`sides`). The outline of the room the spots are measured against is saved once in `wedding.settings.meta.room`. The drawing isn't to scale, so when tables sit past the right wall the page draws that wall farther out to fit them; the saved outline never changes.
 - Meal choices and VIPs are saved on each guest (`meal`, `vip`), the menu in `wedding.settings.meta.meals`, and seating rules in `wedding.rules`.
 
 ## The family link

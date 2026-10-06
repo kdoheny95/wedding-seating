@@ -1262,7 +1262,16 @@ dialog.pick-dlg{width:min(520px,calc(100vw - 24px))}
     var st = stackUp(nums, tabs, L, pos);
     var floor = { x0: R.X(PL.fx0), x1: R.X(PL.fx1), y0: R.Y(PL.fy0), y1: R.Y(PL.fy1) };
     if (!opt.noResolve) resolveBodies(st.bodies, tabs, st.place, pinN, [floor]);
-    return { tabs: tabs, place: st.place, X: R.X, Y: R.Y, P: P, sy: P.sy, syl: P.syl, colX: P.colX, hallR: P.hallR, yDoor: P.yDoor, yRope: P.yRope, floorW: P.floorW, nums: nums, links: L, bodies: st.bodies, free: true };
+    var P2 = roomToFit(P, tabs, st.place, st.bodies), R2 = P2 === P ? R : roomMaps(P2);
+    return { tabs: tabs, place: st.place, X: R2.X, Y: R2.Y, P: P2, sy: P2.sy, syl: P2.syl, colX: P2.colX, hallR: P2.hallR, yDoor: P2.yDoor, yRope: P2.yRope, floorW: P2.floorW, nums: nums, links: L, bodies: st.bodies, free: true };
+  }
+  /* The drawing isn't to scale, so when tables need more room on the right the right wall moves out to fit them */
+  function roomToFit(P, tabs, place, bodies) {
+    var right = -Infinity;
+    bodies.forEach(function (b) { (b.rects || bodyRects(tabs, place, b.members)).forEach(function (r) { if (r.x1 > right) right = r.x1; }); });
+    var extra = right + 24 - P.hallR;
+    if (!(extra > 0.5)) return P;
+    return Object.assign({}, P, { hallR: P.hallR + extra, XB: P.XB.map(function (q) { return q[0] >= 785 ? [q[0], q[1] + extra] : q; }) });
   }
   function layout() {
     var P = S.meta && S.meta.room;
